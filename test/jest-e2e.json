@@ -1,0 +1,30 @@
+{
+	"moduleFileExtensions": ["js", "json", "ts"],
+	"rootDir": ".",
+	"testRegex": ".*\\.e2e\\.spec\\.ts$",
+	"transform": {
+		"^.+\\.(t|j)s$": [
+			"ts-jest",
+			{
+				"tsconfig": {
+					"esModuleInterop": true,
+					"isolatedModules": true
+				}
+			}
+		]
+	},
+	"collectCoverageFrom": [
+		"src/**/*.(t|j)s",
+		"!src/**/*.spec.ts",
+		"!src/**/*.e2e.spec.ts",
+		"!src/**/*.interface.ts",
+		"!src/**/*.dto.ts",
+		"!src/**/*.entity.ts",
+		"!src/**/index.ts"
+	],
+	"testEnvironment": "node",
+	"testTimeout": 10000,
+	"moduleNameMapper": {
+		"^src/(.*)$": "<rootDir>/../src/$1"
+	}
+}

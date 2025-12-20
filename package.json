@@ -1,0 +1,95 @@
+{
+	"name": "nestjs-starter",
+	"version": "0.0.1",
+	"description": "",
+	"author": "",
+	"private": true,
+	"license": "UNLICENSED",
+	"scripts": {
+		"build": "nest build",
+		"format": "biome format --write ./src",
+		"start": "nest start",
+		"start:dev": "nest start --watch",
+		"start:debug": "nest start --debug --watch",
+		"start:prod": "node dist/main",
+		"lint": "biome lint ./src",
+		"check": "biome check --write ./src",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:cov": "jest --coverage",
+		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+		"test:e2e": "jest --config ./test/jest-e2e.json",
+		"docker:up": "docker compose up -d",
+		"docker:down": "docker compose down",
+		"docker:logs": "docker compose logs -f",
+		"docker:build": "docker compose build",
+		"prepare": "husky || true",
+		"commit": "cz"
+	},
+	"lint-staged": {
+		"**.{js,ts,mjs,json,jsonc,spec.ts}": [
+			"biome lint --write --no-errors-on-unmatched",
+			"biome format --write --no-errors-on-unmatched",
+			"biome check --write --no-errors-on-unmatched"
+		],
+		"!(test/**)/**/*.spec.ts": [
+			"yarn run test"
+		]
+	},
+	"dependencies": {
+		"@nestjs/common": "^11.0.1",
+		"@nestjs/core": "^11.0.1",
+		"@nestjs/platform-express": "^11.0.1",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.5",
+		"@commitlint/cli": "^20.1.0",
+		"@commitlint/config-conventional": "^20.0.0",
+		"@nestjs/cli": "^11.0.0",
+		"@nestjs/schematics": "^11.0.0",
+		"@nestjs/testing": "^11.0.1",
+		"@types/express": "^5.0.0",
+		"@types/jest": "^30.0.0",
+		"@types/node": "^22.10.7",
+		"@types/supertest": "^6.0.3",
+		"cz-conventional-changelog": "^3.3.0",
+		"globals": "^16.0.0",
+		"husky": "^9.1.7",
+		"jest": "^30.0.0",
+		"lint-staged": "^16.2.4",
+		"source-map-support": "^0.5.21",
+		"supertest": "^7.1.4",
+		"ts-jest": "^29.2.5",
+		"ts-loader": "^9.5.2",
+		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
+		"typescript": "^5.7.3"
+	},
+	"jest": {
+		"moduleFileExtensions": [
+			"js",
+			"json",
+			"ts"
+		],
+		"rootDir": "src",
+		"testRegex": ".*\\.spec\\.ts$",
+		"transform": {
+			"^.+\\.(t|j)s$": "ts-jest"
+		},
+		"collectCoverageFrom": [
+			"**/*.(t|j)s"
+		],
+		"coverageDirectory": "../coverage",
+		"testEnvironment": "node",
+		"moduleNameMapper": {
+			"^src/(.*)$": "<rootDir>/$1"
+		}
+	},
+	"config": {
+		"commitizen": {
+			"path": "./node_modules/cz-conventional-changelog"
+		}
+	}
+}
