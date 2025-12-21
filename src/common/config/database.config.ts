@@ -8,5 +8,5 @@ export default registerAs('database', () => ({
 	database: process.env.DATABASE_NAME,
 	type: 'postgres' as const,
 	synchronize: Boolean(process.env.DATABASE_SYNCHRONIZE),
-	entities: [`${__dirname}/../../**/*.entity.ts`]
+	autoLoadEntities: Boolean(process.env.DATABASE_AUTO_LOAD_ENTITIES)
 }))
