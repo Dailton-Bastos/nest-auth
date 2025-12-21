@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres
-    container_name: nestjs-starter-postgres
+    container_name: nest-auth-postgres
     restart: always
     shm_size: 128mb
     ports:
@@ -13,7 +13,7 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql
     networks:
-      - nestjs-starter-network
+      - nest-auth-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -26,8 +26,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: prerelease
-    image: nestjs-starter-api:latest
-    container_name: nestjs-starter-api
+    image: nest-auth-api:latest
+    container_name: nest-auth-api
     env_file:
       - .env
     ports:
@@ -37,7 +37,7 @@ services:
       - ./node_modules:/usr/src/app/node_modules
     command: yarn start:dev
     networks:
-      - nestjs-starter-network
+      - nest-auth-network
     depends_on:
       db:
         condition: service_healthy
@@ -50,7 +50,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: nestjs-starter-pgadmin
+    container_name: nest-auth-pgadmin
     restart: always
     ports:
       - '${PGADMIN_HOST_PORT}:${PGADMIN_CONTAINER_PORT}'
@@ -62,7 +62,7 @@ services:
     volumes:
       - ./pgadmin:/var/lib/pgadmin
     networks:
-      - nestjs-starter-network
+      - nest-auth-network
 
   # ========================================
   # Test Service
@@ -73,11 +73,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: test
-    container_name: nestjs-starter-api-test
+    container_name: nest-auth-api-test
     env_file:
-      - .env
-    environment:
-      - NODE_ENV=test
+      - .env.test.local
     volumes:
       - ./src:/usr/src/app/src
       - ./node_modules:/usr/src/app/node_modules
@@ -87,12 +85,12 @@ services:
       - ./nest-cli.json:/usr/src/app/nest-cli.json
       - ./test:/usr/src/app/test
     networks:
-      - nestjs-starter-network
+      - nest-auth-network
     depends_on:
       db:
         condition: service_healthy
 
 networks:
-  nestjs-starter-network:
+  nest-auth-network:
     driver: bridge
-    name: nestjs-starter-network
+    name: nest-auth-network
