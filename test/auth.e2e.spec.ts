@@ -39,5 +39,25 @@ describe('Auth (e2e)', () => {
 				'property password should not exist'
 			)
 		})
+
+		it('should return a 409 error if the user already exists', async () => {
+			const email = 'test@example.com'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email })
+
+			expect(response.status).toBe(HttpStatus.CONFLICT)
+			expect(response.body).toEqual({
+				error: 'Conflict',
+				statusCode: HttpStatus.CONFLICT,
+				message: 'user already exists'
+			})
+		})
 	})
 })

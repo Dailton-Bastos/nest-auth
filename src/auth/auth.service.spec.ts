@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
+
+import { ConflictException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { UsersService } from 'src/users/users.service'
 import { User } from '../users/entities/user.entity'
@@ -16,7 +18,8 @@ describe('AuthService', () => {
 				{
 					provide: UsersService,
 					useValue: {
-						create: jest.fn()
+						create: jest.fn(),
+						findByEmail: jest.fn()
 					}
 				}
 			]
@@ -46,5 +49,15 @@ describe('AuthService', () => {
 		expect(usersService.create).toHaveBeenCalledWith(signupDto)
 
 		expect(result).toEqual(signupDto)
+	})
+
+	it('should throw an error if the user already exists', async () => {
+		const signupDto: SignupDto = {
+			email: 'test@example.com'
+		}
+
+		jest.spyOn(usersService, 'findByEmail').mockResolvedValue(signupDto as User)
+
+		await expect(service.signup(signupDto)).rejects.toThrow(ConflictException)
 	})
 })
