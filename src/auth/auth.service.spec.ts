@@ -2,14 +2,18 @@
 
 import { ConflictException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
-import { UsersService } from 'src/users/users.service'
+import { AccessKeyService } from '../access-key/access-key.service'
+import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
+import { UsersService } from '../users/users.service'
 import { AuthService } from './auth.service'
+import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 
 describe('AuthService', () => {
 	let service: AuthService
 	let usersService: UsersService
+	let accessKeyService: AccessKeyService
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -21,12 +25,19 @@ describe('AuthService', () => {
 						create: jest.fn(),
 						findByEmail: jest.fn()
 					}
+				},
+				{
+					provide: AccessKeyService,
+					useValue: {
+						create: jest.fn()
+					}
 				}
 			]
 		}).compile()
 
 		service = module.get<AuthService>(AuthService)
 		usersService = module.get<UsersService>(UsersService)
+		accessKeyService = module.get<AccessKeyService>(AccessKeyService)
 	})
 
 	it('AuthService should be defined', () => {
@@ -35,6 +46,10 @@ describe('AuthService', () => {
 
 	it('UsersService should be defined', () => {
 		expect(usersService).toBeDefined()
+	})
+
+	it('AccessKeyService should be defined', () => {
+		expect(accessKeyService).toBeDefined()
 	})
 
 	it('should sign up a new user with email', async () => {
@@ -59,5 +74,30 @@ describe('AuthService', () => {
 		jest.spyOn(usersService, 'findByEmail').mockResolvedValue(signupDto as User)
 
 		await expect(service.signup(signupDto)).rejects.toThrow(ConflictException)
+	})
+
+	describe('createAccessKey', () => {
+		it('should create a new access key with email', async () => {
+			const createAccessKeyDto: CreateAccessKeyDto = {
+				email: 'test@example.com'
+			}
+
+			const newAccessKey = {
+				id: 1,
+				code: '123456',
+				expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes,
+				email: createAccessKeyDto.email
+			}
+
+			jest
+				.spyOn(accessKeyService, 'create')
+				.mockResolvedValue(newAccessKey as AccessKey)
+
+			const result = await service.createAccessKey(createAccessKeyDto)
+
+			expect(accessKeyService.create).toHaveBeenCalledWith(createAccessKeyDto)
+
+			expect(result).toEqual(newAccessKey)
+		})
 	})
 })

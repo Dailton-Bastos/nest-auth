@@ -5,6 +5,7 @@ import { AccessKey } from './entities/access-key.entity'
 
 @Module({
 	imports: [TypeOrmModule.forFeature([AccessKey])],
-	providers: [AccessKeyService]
+	providers: [AccessKeyService],
+	exports: [AccessKeyService]
 })
 export class AccessKeyModule {}
