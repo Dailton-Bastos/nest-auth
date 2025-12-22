@@ -60,4 +60,31 @@ describe('Auth (e2e)', () => {
 			})
 		})
 	})
+
+	describe('POST /api/auth/accesskey/send', () => {
+		it('should send a new access key with email', async () => {
+			const email = 'test@example.com'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			expect(response.body).toEqual({
+				id: expect.any(Number),
+				code: expect.any(String),
+				expiresAt: expect.any(String),
+				email
+			})
+		})
+
+		it('should return a 400 error if the email is invalid', async () => {
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email: '' })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('email must be an email')
+		})
+	})
 })
