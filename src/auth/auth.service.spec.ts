@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
-import { ConflictException } from '@nestjs/common'
+import { BadRequestException, ConflictException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
@@ -98,6 +98,16 @@ describe('AuthService', () => {
 			expect(accessKeyService.create).toHaveBeenCalledWith(sendAccessKeyDto)
 
 			expect(result).toEqual(newAccessKey)
+		})
+
+		it('should throw an error if the email is not provided', async () => {
+			const sendAccessKeyDto: SendAccessKeyDto = {
+				email: ''
+			}
+
+			await expect(service.sendAccessKey(sendAccessKeyDto)).rejects.toThrow(
+				BadRequestException
+			)
 		})
 	})
 })
