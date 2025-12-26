@@ -2,10 +2,10 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigModule, type ConfigType } from '@nestjs/config'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { HashingModule } from 'src/common/hashing/hashing.module'
 import type { App } from 'supertest/types'
 import { AuthModule } from '../src/auth/auth.module'
 import databaseConfig from '../src/common/config/database.config'
-
 export let app: INestApplication<App>
 
 global.beforeEach(async () => {
@@ -29,8 +29,10 @@ global.beforeEach(async () => {
 					dropSchema: true
 				})
 			}),
-			AuthModule
-		]
+			AuthModule,
+			HashingModule
+		],
+		exports: [HashingModule]
 	}).compile()
 
 	app = module.createNestApplication()

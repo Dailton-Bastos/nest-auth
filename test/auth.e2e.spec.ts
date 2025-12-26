@@ -76,6 +76,9 @@ describe('Auth (e2e)', () => {
 				expiresAt: expect.any(String),
 				email
 			})
+
+			expect(response.body.code).not.toEqual('123456')
+			expect(response.body.code.length).toBeGreaterThan(6)
 		})
 
 		it('should return a 400 error if the email is invalid', async () => {

@@ -78,7 +78,7 @@ services:
       - .env
     volumes:
       - ./src:/usr/src/app/src
-      - ./node_modules:/usr/src/app/node_modules
+      - /src/app/node_modules
       - ./coverage:/usr/src/app/coverage
       - ./tsconfig.json:/usr/src/app/tsconfig.json
       - ./tsconfig.build.json:/usr/src/app/tsconfig.build.json
