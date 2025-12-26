@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
-import { ConflictException, Injectable } from '@nestjs/common'
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable
+} from '@nestjs/common'
 import { AccessKeyService } from 'src/access-key/access-key.service'
 import { UsersService } from 'src/users/users.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
@@ -23,6 +27,10 @@ export class AuthService {
 	}
 
 	async sendAccessKey(sendAccessKeyDto: SendAccessKeyDto) {
+		if (!sendAccessKeyDto.email) {
+			throw new BadRequestException('email is required')
+		}
+
 		return this.accessKeyService.create(sendAccessKeyDto)
 	}
 }
