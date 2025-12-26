@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { AccessKeyModule } from './access-key/access-key.module'
 import { AuthModule } from './auth/auth.module'
 import databaseConfig from './common/config/database.config'
+import { HashingModule } from './common/hashing/hashing.module'
 import { HealthModule } from './health/health.module'
 import { UsersModule } from './users/users.module'
 
@@ -14,6 +15,7 @@ import { UsersModule } from './users/users.module'
 			isGlobal: true
 		}),
 		TypeOrmModule.forRootAsync(databaseConfig.asProvider()),
+		HashingModule,
 		HealthModule,
 		UsersModule,
 		AuthModule,
@@ -28,6 +30,7 @@ import { UsersModule } from './users/users.module'
 				forbidNonWhitelisted: true
 			})
 		}
-	]
+	],
+	exports: [HashingModule]
 })
 export class AppModule {}

@@ -2,6 +2,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { HashingService } from '../common/hashing/hashing.service'
+import { generateSecureSixDigitOTP } from '../common/utils'
 import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
 import { AccessKey } from './entities/access-key.entity'
 
@@ -9,7 +11,8 @@ import { AccessKey } from './entities/access-key.entity'
 export class AccessKeyService {
 	constructor(
 		@InjectRepository(AccessKey)
-		private readonly accessKeyRepository: Repository<AccessKey>
+		private readonly accessKeyRepository: Repository<AccessKey>,
+		private readonly hashingService: HashingService
 	) {}
 
 	async create(createAccessKeyDto: CreateAccessKeyDto) {
@@ -19,11 +22,20 @@ export class AccessKeyService {
 
 		const accessKey = this.accessKeyRepository.create(createAccessKeyDto)
 
-		accessKey.code = '123456'
+		const hashedCode = await this.generateHashedCode()
+
+		accessKey.code = hashedCode
+
 		accessKey.expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
 		await this.accessKeyRepository.save(accessKey)
 
 		return accessKey
+	}
+
+	private async generateHashedCode() {
+		const code = generateSecureSixDigitOTP()
+
+		return this.hashingService.hash(code)
 	}
 }
