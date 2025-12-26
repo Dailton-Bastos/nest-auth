@@ -3,14 +3,14 @@ import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
-import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
+import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 
 describe('AuthController', () => {
 	let controller: AuthController
 	const authService: AuthService = {
 		signup: jest.fn(),
-		createAccessKey: jest.fn()
+		sendAccessKey: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -45,9 +45,9 @@ describe('AuthController', () => {
 		})
 	})
 
-	describe('createAccessKey', () => {
-		it('should create a new access key with email', async () => {
-			const createAccessKeyDto: CreateAccessKeyDto = {
+	describe('sendAccessKey', () => {
+		it('should send a new access key with email', async () => {
+			const sendAccessKeyDto: SendAccessKeyDto = {
 				email: 'test@example.com'
 			}
 
@@ -55,16 +55,14 @@ describe('AuthController', () => {
 				id: 1,
 				code: '123456',
 				expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes,
-				email: createAccessKeyDto.email
+				email: sendAccessKeyDto.email
 			} as AccessKey
 
-			jest.spyOn(authService, 'createAccessKey').mockResolvedValue(accessKey)
+			jest.spyOn(authService, 'sendAccessKey').mockResolvedValue(accessKey)
 
-			const result = await controller.createAccessKey(createAccessKeyDto)
+			const result = await controller.sendAccessKey(sendAccessKeyDto)
 
-			expect(authService.createAccessKey).toHaveBeenCalledWith(
-				createAccessKeyDto
-			)
+			expect(authService.sendAccessKey).toHaveBeenCalledWith(sendAccessKeyDto)
 
 			expect(result).toEqual(accessKey)
 		})

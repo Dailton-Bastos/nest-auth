@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 import { Body, Controller, Post } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
+import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 
 @Controller('auth')
@@ -14,7 +14,7 @@ export class AuthController {
 	}
 
 	@Post('accesskey/send')
-	async createAccessKey(@Body() createAccessKeyDto: CreateAccessKeyDto) {
-		return this.authService.createAccessKey(createAccessKeyDto)
+	async sendAccessKey(@Body() sendAccessKeyDto: SendAccessKeyDto) {
+		return this.authService.sendAccessKey(sendAccessKeyDto)
 	}
 }

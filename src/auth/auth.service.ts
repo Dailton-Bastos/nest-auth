@@ -2,7 +2,7 @@
 import { ConflictException, Injectable } from '@nestjs/common'
 import { AccessKeyService } from 'src/access-key/access-key.service'
 import { UsersService } from 'src/users/users.service'
-import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
+import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 
 @Injectable()
@@ -22,7 +22,7 @@ export class AuthService {
 		return this.usersService.create(signupDto)
 	}
 
-	async createAccessKey(createAccessKeyDto: CreateAccessKeyDto) {
-		return this.accessKeyService.create(createAccessKeyDto)
+	async sendAccessKey(sendAccessKeyDto: SendAccessKeyDto) {
+		return this.accessKeyService.create(sendAccessKeyDto)
 	}
 }

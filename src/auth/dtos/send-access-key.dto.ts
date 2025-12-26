@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty } from 'class-validator'
 
-export class CreateAccessKeyDto {
+export class SendAccessKeyDto {
 	@IsEmail()
 	@IsNotEmpty()
 	email: string

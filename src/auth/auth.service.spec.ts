@@ -7,7 +7,7 @@ import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
 import { UsersService } from '../users/users.service'
 import { AuthService } from './auth.service'
-import { CreateAccessKeyDto } from './dtos/create-access-key.dto'
+import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 
 describe('AuthService', () => {
@@ -76,9 +76,9 @@ describe('AuthService', () => {
 		await expect(service.signup(signupDto)).rejects.toThrow(ConflictException)
 	})
 
-	describe('createAccessKey', () => {
-		it('should create a new access key with email', async () => {
-			const createAccessKeyDto: CreateAccessKeyDto = {
+	describe('sendAccessKey', () => {
+		it('should send a new access key with email', async () => {
+			const sendAccessKeyDto: SendAccessKeyDto = {
 				email: 'test@example.com'
 			}
 
@@ -86,16 +86,16 @@ describe('AuthService', () => {
 				id: 1,
 				code: '123456',
 				expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes,
-				email: createAccessKeyDto.email
+				email: sendAccessKeyDto.email
 			}
 
 			jest
 				.spyOn(accessKeyService, 'create')
 				.mockResolvedValue(newAccessKey as AccessKey)
 
-			const result = await service.createAccessKey(createAccessKeyDto)
+			const result = await service.sendAccessKey(sendAccessKeyDto)
 
-			expect(accessKeyService.create).toHaveBeenCalledWith(createAccessKeyDto)
+			expect(accessKeyService.create).toHaveBeenCalledWith(sendAccessKeyDto)
 
 			expect(result).toEqual(newAccessKey)
 		})
