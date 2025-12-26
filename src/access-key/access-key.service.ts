@@ -33,6 +33,10 @@ export class AccessKeyService {
 		return accessKey
 	}
 
+	async findByEmail(email: string) {
+		return this.accessKeyRepository.findOne({ where: { email } })
+	}
+
 	private async generateHashedCode() {
 		const code = generateSecureSixDigitOTP()
 

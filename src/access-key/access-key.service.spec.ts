@@ -22,6 +22,7 @@ describe('AccessKeyService', () => {
 					provide: getRepositoryToken(AccessKey),
 					useValue: {
 						create: jest.fn(),
+						findOne: jest.fn(),
 						save: jest.fn()
 					}
 				},
@@ -93,6 +94,34 @@ describe('AccessKeyService', () => {
 			await expect(service.create(createAccessKeyDto)).rejects.toThrow(
 				BadRequestException
 			)
+		})
+	})
+
+	describe('find', () => {
+		it('should find a access key by email', async () => {
+			const email = 'test@example.com'
+
+			const accessKey = {
+				email
+			} as AccessKey
+
+			jest.spyOn(repository, 'findOne').mockResolvedValue(accessKey)
+
+			const result = await service.findByEmail(email)
+
+			expect(repository.findOne).toHaveBeenCalledWith({ where: { email } })
+
+			expect(result?.email).toEqual(email)
+		})
+
+		it('should return null if the access key is not found', async () => {
+			const email = 'test@example.com'
+
+			jest.spyOn(repository, 'findOne').mockResolvedValue(null)
+
+			const result = await service.findByEmail(email)
+
+			expect(result).toBeNull()
 		})
 	})
 })
