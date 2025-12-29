@@ -126,41 +126,6 @@ describe('AccessKeyService', () => {
 	})
 
 	describe('verify', () => {
-		// it('should verify an access key with email and code', async () => {
-		// 	const email = 'test@example.com'
-		// 	const code = 'hashed-code'
-
-		// 	const accessKey = {
-		// 		email,
-		// 		code
-		// 	} as AccessKey
-
-		// 	jest.spyOn(hashingService, 'verify').mockResolvedValue(true)
-		// 	jest.spyOn(service, 'findByEmail').mockResolvedValue(accessKey)
-
-		// 	const result = await service.verify(email, code)
-
-		// 	expect(service.findByEmail).toHaveBeenCalledWith(email)
-		// 	expect(hashingService.verify).toHaveBeenCalledWith(code, accessKey.code)
-
-		// 	expect(result).toBeTruthy()
-		// })
-
-		// it('should return false if the code is incorrect or the access key is not found', async () => {
-		// 	const email = 'test@example.com'
-		// 	const code = 'incorrect-code'
-
-		// 	jest.spyOn(service, 'findByEmail').mockResolvedValue(null)
-
-		// 	const result = await service.verify(email, code)
-
-		// 	expect(service.findByEmail).toHaveBeenCalledWith(email)
-
-		// 	expect(hashingService.verify).not.toHaveBeenCalled()
-
-		// 	expect(result).toBeFalsy()
-		// })
-
 		it('should throw an error if the access key is not found', async () => {
 			const email = 'test@example.com'
 			const code = '123456'
