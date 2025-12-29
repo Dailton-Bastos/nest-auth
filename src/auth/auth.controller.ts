@@ -3,6 +3,7 @@ import { Body, Controller, Post } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
+import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -16,5 +17,10 @@ export class AuthController {
 	@Post('accesskey/send')
 	async sendAccessKey(@Body() sendAccessKeyDto: SendAccessKeyDto) {
 		return this.authService.sendAccessKey(sendAccessKeyDto)
+	}
+
+	@Post('accesskey/verify')
+	async verifyAccessKey(@Body() verifyAccessKeyDto: VerifyAccessKeyDto) {
+		return this.authService.verifyAccessKey(verifyAccessKeyDto)
 	}
 }

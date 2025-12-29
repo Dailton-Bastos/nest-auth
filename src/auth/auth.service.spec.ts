@@ -9,6 +9,7 @@ import { UsersService } from '../users/users.service'
 import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
+import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 
 describe('AuthService', () => {
 	let service: AuthService
@@ -29,7 +30,8 @@ describe('AuthService', () => {
 				{
 					provide: AccessKeyService,
 					useValue: {
-						create: jest.fn()
+						create: jest.fn(),
+						verify: jest.fn()
 					}
 				}
 			]
@@ -108,6 +110,27 @@ describe('AuthService', () => {
 			await expect(service.sendAccessKey(sendAccessKeyDto)).rejects.toThrow(
 				BadRequestException
 			)
+		})
+	})
+
+	describe('verifyAccessKey', () => {
+		it('should verify an access key with email and code', async () => {
+			const verifyAccessKeyDto: VerifyAccessKeyDto = {
+				email: 'test@example.com',
+				code: '123456'
+			}
+
+			jest.spyOn(accessKeyService, 'verify').mockResolvedValue(true)
+
+			const result = await service.verifyAccessKey(verifyAccessKeyDto)
+
+			expect(accessKeyService.verify).toHaveBeenCalledWith(
+				verifyAccessKeyDto.email,
+				verifyAccessKeyDto.code
+			)
+
+			expect(result).toBeDefined()
+			expect(result).not.toBeNull()
 		})
 	})
 })

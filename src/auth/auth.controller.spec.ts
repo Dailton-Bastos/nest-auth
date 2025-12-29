@@ -5,12 +5,14 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
+import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 
 describe('AuthController', () => {
 	let controller: AuthController
 	const authService: AuthService = {
 		signup: jest.fn(),
-		sendAccessKey: jest.fn()
+		sendAccessKey: jest.fn(),
+		verifyAccessKey: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -65,6 +67,24 @@ describe('AuthController', () => {
 			expect(authService.sendAccessKey).toHaveBeenCalledWith(sendAccessKeyDto)
 
 			expect(result).toEqual(accessKey)
+		})
+	})
+
+	describe('verifyAccessKey', () => {
+		it('should verify an access key with email and code', async () => {
+			const verifyAccessKeyDto: VerifyAccessKeyDto = {
+				email: 'test@example.com',
+				code: '123456'
+			}
+
+			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(true)
+
+			const result = await controller.verifyAccessKey(verifyAccessKeyDto)
+
+			expect(authService.verifyAccessKey).toHaveBeenCalledWith(
+				verifyAccessKeyDto
+			)
+			expect(result).toBeTruthy()
 		})
 	})
 })

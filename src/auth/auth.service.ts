@@ -8,6 +8,7 @@ import { AccessKeyService } from 'src/access-key/access-key.service'
 import { UsersService } from 'src/users/users.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
+import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 
 @Injectable()
 export class AuthService {
@@ -32,5 +33,12 @@ export class AuthService {
 		}
 
 		return this.accessKeyService.create(sendAccessKeyDto)
+	}
+
+	async verifyAccessKey(verifyAccessKeyDto: VerifyAccessKeyDto) {
+		return this.accessKeyService.verify(
+			verifyAccessKeyDto.email,
+			verifyAccessKeyDto.code
+		)
 	}
 }
