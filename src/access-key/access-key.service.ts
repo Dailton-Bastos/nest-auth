@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { HashingService } from '../common/hashing/hashing.service'
@@ -35,6 +39,22 @@ export class AccessKeyService {
 
 	async findByEmail(email: string) {
 		return this.accessKeyRepository.findOne({ where: { email } })
+	}
+
+	async verify(email: string, code: string) {
+		const accessKey = await this.findByEmail(email)
+
+		if (!accessKey) throw new NotFoundException('access key not found')
+
+		const isValid = await this.hashingService.verify(code, accessKey.code)
+
+		if (!isValid) throw new BadRequestException('invalid code')
+
+		const isExpired = accessKey.expiresAt < new Date()
+
+		if (isExpired) throw new BadRequestException('access key expired')
+
+		return true
 	}
 
 	private async generateHashedCode() {

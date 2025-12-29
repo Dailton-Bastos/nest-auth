@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { HashingService } from 'src/common/hashing/hashing.service'
@@ -122,6 +122,109 @@ describe('AccessKeyService', () => {
 			const result = await service.findByEmail(email)
 
 			expect(result).toBeNull()
+		})
+	})
+
+	describe('verify', () => {
+		// it('should verify an access key with email and code', async () => {
+		// 	const email = 'test@example.com'
+		// 	const code = 'hashed-code'
+
+		// 	const accessKey = {
+		// 		email,
+		// 		code
+		// 	} as AccessKey
+
+		// 	jest.spyOn(hashingService, 'verify').mockResolvedValue(true)
+		// 	jest.spyOn(service, 'findByEmail').mockResolvedValue(accessKey)
+
+		// 	const result = await service.verify(email, code)
+
+		// 	expect(service.findByEmail).toHaveBeenCalledWith(email)
+		// 	expect(hashingService.verify).toHaveBeenCalledWith(code, accessKey.code)
+
+		// 	expect(result).toBeTruthy()
+		// })
+
+		// it('should return false if the code is incorrect or the access key is not found', async () => {
+		// 	const email = 'test@example.com'
+		// 	const code = 'incorrect-code'
+
+		// 	jest.spyOn(service, 'findByEmail').mockResolvedValue(null)
+
+		// 	const result = await service.verify(email, code)
+
+		// 	expect(service.findByEmail).toHaveBeenCalledWith(email)
+
+		// 	expect(hashingService.verify).not.toHaveBeenCalled()
+
+		// 	expect(result).toBeFalsy()
+		// })
+
+		it('should throw an error if the access key is not found', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			jest.spyOn(service, 'findByEmail').mockResolvedValue(null)
+
+			await expect(service.verify(email, code)).rejects.toThrow(
+				NotFoundException
+			)
+		})
+
+		it('should throw an error if the code is incorrect', async () => {
+			const email = 'test@example.com'
+			const code = 'incorrect-code'
+
+			const accessKey = {
+				email,
+				code: 'hashed-code'
+			} as AccessKey
+
+			jest.spyOn(service, 'findByEmail').mockResolvedValue(accessKey)
+			jest.spyOn(hashingService, 'verify').mockResolvedValue(false)
+
+			await expect(service.verify(email, code)).rejects.toThrow(
+				BadRequestException
+			)
+		})
+
+		it('should throw an error if the access key is expired', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			const accessKey = {
+				email,
+				code: 'hashed-code',
+				expiresAt: new Date(Date.now() - 1 * 60 * 1000) // 1 minute ago
+			} as AccessKey
+
+			jest.spyOn(service, 'findByEmail').mockResolvedValue(accessKey)
+			jest.spyOn(hashingService, 'verify').mockResolvedValue(true)
+
+			await expect(service.verify(email, code)).rejects.toThrow(
+				BadRequestException
+			)
+
+			expect(service.findByEmail).toHaveBeenCalledWith(email)
+			expect(hashingService.verify).toHaveBeenCalledWith(code, accessKey.code)
+		})
+
+		it('should return true if the access key is valid and not expired', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			const accessKey = {
+				email,
+				code: 'hashed-code'
+			} as AccessKey
+
+			jest.spyOn(service, 'findByEmail').mockResolvedValue(accessKey)
+			jest.spyOn(hashingService, 'verify').mockResolvedValue(true)
+
+			const result = await service.verify(email, code)
+
+			expect(result).toBeTruthy()
 		})
 	})
 })
