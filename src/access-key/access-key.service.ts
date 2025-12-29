@@ -38,7 +38,10 @@ export class AccessKeyService {
 	}
 
 	async findByEmail(email: string) {
-		return this.accessKeyRepository.findOne({ where: { email } })
+		return this.accessKeyRepository.findOne({
+			where: { email },
+			order: { expiresAt: 'DESC' }
+		})
 	}
 
 	async verify(email: string, code: string) {

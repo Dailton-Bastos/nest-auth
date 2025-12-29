@@ -109,7 +109,10 @@ describe('AccessKeyService', () => {
 
 			const result = await service.findByEmail(email)
 
-			expect(repository.findOne).toHaveBeenCalledWith({ where: { email } })
+			expect(repository.findOne).toHaveBeenCalledWith({
+				where: { email },
+				order: { expiresAt: 'DESC' }
+			})
 
 			expect(result?.email).toEqual(email)
 		})
