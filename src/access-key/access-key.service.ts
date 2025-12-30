@@ -24,13 +24,18 @@ export class AccessKeyService {
 			throw new BadRequestException('email is required')
 		}
 
+		await this.deleteByEmail(createAccessKeyDto.email)
+
 		const accessKey = this.accessKeyRepository.create(createAccessKeyDto)
 
 		const hashedCode = await this.generateHashedCode()
 
 		accessKey.code = hashedCode
 
-		accessKey.expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+		accessKey.expiresAt =
+			process.env.NODE_ENV === 'test'
+				? new Date(Date.now() + 5000) // 5 seconds
+				: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
 		await this.accessKeyRepository.save(accessKey)
 
@@ -58,6 +63,14 @@ export class AccessKeyService {
 		if (isExpired) throw new BadRequestException('access key expired')
 
 		return true
+	}
+
+	async deleteByEmail(email: string) {
+		const accessKeys = await this.accessKeyRepository.find({
+			where: { email }
+		})
+
+		return this.accessKeyRepository.remove(accessKeys)
 	}
 
 	private async generateHashedCode() {

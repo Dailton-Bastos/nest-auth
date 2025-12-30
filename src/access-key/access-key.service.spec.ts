@@ -23,7 +23,9 @@ describe('AccessKeyService', () => {
 					useValue: {
 						create: jest.fn(),
 						findOne: jest.fn(),
-						save: jest.fn()
+						save: jest.fn(),
+						remove: jest.fn(),
+						find: jest.fn()
 					}
 				},
 				{
@@ -94,6 +96,19 @@ describe('AccessKeyService', () => {
 			await expect(service.create(createAccessKeyDto)).rejects.toThrow(
 				BadRequestException
 			)
+		})
+
+		it('should remove all existing access keys when the email is provided', async () => {
+			const email = 'test@example.com'
+
+			const accessKeys = [{ email }, { email }] as AccessKey[]
+
+			jest.spyOn(service, 'deleteByEmail').mockResolvedValue(accessKeys)
+
+			const result = await service.deleteByEmail(email)
+
+			expect(service.deleteByEmail).toHaveBeenCalledWith(email)
+			expect(result).toEqual(accessKeys)
 		})
 	})
 
@@ -193,6 +208,22 @@ describe('AccessKeyService', () => {
 			const result = await service.verify(email, code)
 
 			expect(result).toBeTruthy()
+		})
+	})
+
+	describe('delete', () => {
+		it('should remove all access keys when the email is provided', async () => {
+			const email = 'test@example.com'
+
+			const accessKeys = [{ email }, { email }] as AccessKey[]
+
+			jest.spyOn(repository, 'find').mockResolvedValue(accessKeys)
+
+			await service.deleteByEmail(email)
+
+			expect(repository.find).toHaveBeenCalledWith({ where: { email } })
+
+			expect(repository.remove).toHaveBeenCalledWith(accessKeys)
 		})
 	})
 })
