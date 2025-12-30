@@ -90,4 +90,72 @@ describe('Auth (e2e)', () => {
 			expect(response.body.message).toContain('email must be an email')
 		})
 	})
+
+	describe('POST /api/auth/accesskey/verify', () => {
+		it('should throw an error if the access key is not found', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/verify')
+				.send({ email, code })
+				.expect(HttpStatus.NOT_FOUND)
+
+			expect(response.body.message).toContain('access key not found')
+		})
+
+		it('should throw an error if the code is incorrect', async () => {
+			const email = 'test@example.com'
+			const code = '000000'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/verify')
+				.send({ email, code })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('invalid code')
+		})
+
+		it('should throw an error if the access key is expired', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			await new Promise((resolve) => setTimeout(resolve, 5000))
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/verify')
+				.send({ email, code })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('access key expired')
+		})
+
+		it('should return true if the access key is valid and not expired', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/verify')
+				.send({ email, code })
+				.expect(HttpStatus.OK)
+
+			expect(response.body).toBeDefined()
+			expect(response.body).not.toBeNull()
+		})
+	})
 })

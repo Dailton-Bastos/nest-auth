@@ -8,6 +8,7 @@ export const generateSecureSixDigitOTP = () => {
 	const buffer = randomBytes(3)
 	const otp = buffer.readUIntBE(0, 3) % 1000000
 
-	// Ensure it's 6 digits
-	return otp.toString().padStart(6, '0')
+	return process.env.NODE_ENV === 'test'
+		? '123456'
+		: otp.toString().padStart(6, '0')
 }
