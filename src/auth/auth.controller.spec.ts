@@ -71,20 +71,22 @@ describe('AuthController', () => {
 	})
 
 	describe('verifyAccessKey', () => {
-		it('should verify an access key with email and code', async () => {
+		it('should verify an access key with email and code and return the user', async () => {
 			const verifyAccessKeyDto: VerifyAccessKeyDto = {
 				email: 'test@example.com',
 				code: '123456'
 			}
 
-			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(true)
+			const user = {
+				id: 1,
+				email: verifyAccessKeyDto.email
+			} as User
 
-			const result = await controller.verifyAccessKey(verifyAccessKeyDto)
+			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(user)
 
-			expect(authService.verifyAccessKey).toHaveBeenCalledWith(
-				verifyAccessKeyDto
-			)
-			expect(result).toBeTruthy()
+			const result = await controller.verifyAccessKey(user)
+
+			expect(result).toEqual(user)
 		})
 	})
 })
