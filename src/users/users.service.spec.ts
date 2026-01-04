@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
+
+import { NotFoundException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -19,7 +21,8 @@ describe('UsersService', () => {
 					useValue: {
 						create: jest.fn(),
 						save: jest.fn(),
-						findOne: jest.fn()
+						findOne: jest.fn(),
+						findOneBy: jest.fn()
 					}
 				}
 			]
@@ -74,6 +77,34 @@ describe('UsersService', () => {
 			expect(repository.findOne).toHaveBeenCalledWith({ where: { email } })
 
 			expect(result).toEqual(user)
+		})
+	})
+
+	describe('findById', () => {
+		it('should find a user by id', async () => {
+			const id = 1
+
+			const user = {
+				id
+			} as User
+
+			jest.spyOn(repository, 'findOneBy').mockResolvedValue(user)
+
+			const result = await service.findById(id)
+
+			expect(repository.findOneBy).toHaveBeenCalledWith({ id })
+
+			expect(result).toEqual(user)
+		})
+
+		it('should throw an error if the user is not found', async () => {
+			const id = 1
+
+			jest.spyOn(repository, 'findOneBy').mockResolvedValue(null)
+
+			await expect(service.findById(id)).rejects.toThrow(NotFoundException)
+
+			expect(repository.findOneBy).toHaveBeenCalledWith({ id })
 		})
 	})
 })
