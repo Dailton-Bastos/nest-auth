@@ -32,6 +32,6 @@ export class AuthController {
 	@HttpCode(HttpStatus.OK)
 	@Post('accesskey/verify')
 	async verifyAccessKey(@CurrentUser() user: User) {
-		return user
+		return this.authService.signin(user)
 	}
 }

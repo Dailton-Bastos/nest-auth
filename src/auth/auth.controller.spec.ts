@@ -12,7 +12,8 @@ describe('AuthController', () => {
 	const authService: AuthService = {
 		signup: jest.fn(),
 		sendAccessKey: jest.fn(),
-		verifyAccessKey: jest.fn()
+		verifyAccessKey: jest.fn(),
+		signin: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -71,7 +72,7 @@ describe('AuthController', () => {
 	})
 
 	describe('verifyAccessKey', () => {
-		it('should verify an access key with email and code and return the user', async () => {
+		it('should verify an access key and return the access token', async () => {
 			const verifyAccessKeyDto: VerifyAccessKeyDto = {
 				email: 'test@example.com',
 				code: '123456'
@@ -82,11 +83,20 @@ describe('AuthController', () => {
 				email: verifyAccessKeyDto.email
 			} as User
 
+			const accessToken = 'token'
+
 			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(user)
+			jest.spyOn(authService, 'signin').mockResolvedValue({
+				accessToken: accessToken
+			})
 
 			const result = await controller.verifyAccessKey(user)
 
-			expect(result).toEqual(user)
+			expect(authService.signin).toHaveBeenCalledWith(user)
+
+			expect(result).toEqual({
+				accessToken: accessToken
+			})
 		})
 	})
 })

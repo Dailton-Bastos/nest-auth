@@ -1,9 +1,11 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
 import { BadRequestException, ConflictException } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
+import type { TokenPayload } from '../common/interfaces/token-payload.interface'
 import { User } from '../users/entities/user.entity'
 import { UsersService } from '../users/users.service'
 import { AuthService } from './auth.service'
@@ -15,6 +17,7 @@ describe('AuthService', () => {
 	let service: AuthService
 	let usersService: UsersService
 	let accessKeyService: AccessKeyService
+	let jwtService: JwtService
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -33,6 +36,12 @@ describe('AuthService', () => {
 						create: jest.fn(),
 						verify: jest.fn()
 					}
+				},
+				{
+					provide: JwtService,
+					useValue: {
+						sign: jest.fn()
+					}
 				}
 			]
 		}).compile()
@@ -40,6 +49,7 @@ describe('AuthService', () => {
 		service = module.get<AuthService>(AuthService)
 		usersService = module.get<UsersService>(UsersService)
 		accessKeyService = module.get<AccessKeyService>(AccessKeyService)
+		jwtService = module.get<JwtService>(JwtService)
 	})
 
 	it('AuthService should be defined', () => {
@@ -183,6 +193,32 @@ describe('AuthService', () => {
 			expect(usersService.create).toHaveBeenCalledWith(signupDto)
 			expect(result).not.toBeNull()
 			expect(result).toEqual(signupDto)
+		})
+	})
+
+	describe('signin', () => {
+		it('should sign in a user', async () => {
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			const tokenPayload: TokenPayload = {
+				userId: user.id,
+				email: user.email
+			}
+
+			const accessToken = 'token'
+
+			jest.spyOn(jwtService, 'sign').mockReturnValue(accessToken)
+
+			const result = await service.signin(user)
+
+			expect(jwtService.sign).toHaveBeenCalledWith(tokenPayload)
+
+			expect(result).toEqual({
+				accessToken: accessToken
+			})
 		})
 	})
 })
