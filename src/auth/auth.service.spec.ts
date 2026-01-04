@@ -122,6 +122,29 @@ describe('AuthService', () => {
 
 			jest.spyOn(accessKeyService, 'verify').mockResolvedValue(true)
 
+			await service.verifyAccessKey(verifyAccessKeyDto)
+
+			expect(accessKeyService.verify).toHaveBeenCalledWith(
+				verifyAccessKeyDto.email,
+				verifyAccessKeyDto.code
+			)
+		})
+
+		it('should return a existing user if the access key is valid and not expired', async () => {
+			const verifyAccessKeyDto: VerifyAccessKeyDto = {
+				email: 'test@example.com',
+				code: '123456'
+			}
+
+			const signupDto: SignupDto = {
+				email: 'test@example.com'
+			}
+
+			jest.spyOn(accessKeyService, 'verify').mockResolvedValue(true)
+			jest
+				.spyOn(usersService, 'findByEmail')
+				.mockResolvedValue(signupDto as User)
+
 			const result = await service.verifyAccessKey(verifyAccessKeyDto)
 
 			expect(accessKeyService.verify).toHaveBeenCalledWith(
@@ -129,8 +152,37 @@ describe('AuthService', () => {
 				verifyAccessKeyDto.code
 			)
 
-			expect(result).toBeDefined()
+			expect(usersService.findByEmail).toHaveBeenCalledWith(
+				verifyAccessKeyDto.email
+			)
+
 			expect(result).not.toBeNull()
+			expect(result).toEqual(signupDto)
+		})
+
+		it('should return a new user if the access key is valid and not expired and the user does not exist', async () => {
+			const verifyAccessKeyDto: VerifyAccessKeyDto = {
+				email: 'test@example.com',
+				code: '123456'
+			}
+
+			const signupDto: SignupDto = {
+				email: 'test@example.com'
+			}
+
+			jest.spyOn(accessKeyService, 'verify').mockResolvedValue(true)
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null)
+			jest.spyOn(usersService, 'create').mockResolvedValue(signupDto as User)
+
+			const result = await service.verifyAccessKey(verifyAccessKeyDto)
+
+			expect(usersService.findByEmail).toHaveBeenCalledWith(
+				verifyAccessKeyDto.email
+			)
+
+			expect(usersService.create).toHaveBeenCalledWith(signupDto)
+			expect(result).not.toBeNull()
+			expect(result).toEqual(signupDto)
 		})
 	})
 })

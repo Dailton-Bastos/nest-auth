@@ -36,9 +36,19 @@ export class AuthService {
 	}
 
 	async verifyAccessKey(verifyAccessKeyDto: VerifyAccessKeyDto) {
-		return this.accessKeyService.verify(
+		await this.accessKeyService.verify(
 			verifyAccessKeyDto.email,
 			verifyAccessKeyDto.code
 		)
+
+		const existingUser = await this.usersService.findByEmail(
+			verifyAccessKeyDto.email
+		)
+
+		if (existingUser) return existingUser
+
+		return this.usersService.create({
+			email: verifyAccessKeyDto.email
+		})
 	}
 }

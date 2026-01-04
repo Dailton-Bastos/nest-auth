@@ -1,9 +1,17 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import {
+	Body,
+	Controller,
+	HttpCode,
+	HttpStatus,
+	Post,
+	UseGuards
+} from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
+import { AccessCodeAuthGuard } from './guards/access-code-auth.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +27,7 @@ export class AuthController {
 		return this.authService.sendAccessKey(sendAccessKeyDto)
 	}
 
+	@UseGuards(AccessCodeAuthGuard)
 	@HttpCode(HttpStatus.OK)
 	@Post('accesskey/verify')
 	async verifyAccessKey(@Body() verifyAccessKeyDto: VerifyAccessKeyDto) {
