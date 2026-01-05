@@ -2,6 +2,7 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigModule, type ConfigType } from '@nestjs/config'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import cookieParser from 'cookie-parser'
 import { HashingModule } from 'src/common/hashing/hashing.module'
 import type { App } from 'supertest/types'
 import { AuthModule } from '../src/auth/auth.module'
@@ -38,6 +39,8 @@ global.beforeEach(async () => {
 	app = module.createNestApplication()
 
 	app.setGlobalPrefix('api')
+
+	app.use(cookieParser(process.env.COOKIE_SECRET))
 
 	app.useGlobalPipes(
 		new ValidationPipe({
