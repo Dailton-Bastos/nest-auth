@@ -39,4 +39,12 @@ export class AuthController {
 	) {
 		return this.authService.signin(user, res)
 	}
+
+	@Post('refresh')
+	async refreshToken(
+		@CurrentUser() user: User,
+		@Res({ passthrough: true }) res: Response
+	) {
+		return this.authService.signin(user, res)
+	}
 }

@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt'
 import type { Response } from 'express'
 import { AccessKeyService } from 'src/access-key/access-key.service'
 import cookieConfig from 'src/common/config/cookie.config'
+import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
 import type { TokenPayload } from 'src/common/interfaces/token-payload.interface'
 import { User } from 'src/users/entities/user.entity'
 import { UsersService } from 'src/users/users.service'
@@ -24,7 +25,11 @@ export class AuthService {
 		private readonly accessKeyService: AccessKeyService,
 		private readonly jwtService: JwtService,
 		@Inject(cookieConfig.KEY)
-		private readonly cookieConfiguration: ConfigType<typeof cookieConfig>
+		private readonly cookieConfiguration: ConfigType<typeof cookieConfig>,
+		@Inject(jwtRefreshConfig.KEY)
+		private readonly jwtRefreshConfiguration: ConfigType<
+			typeof jwtRefreshConfig
+		>
 	) {}
 
 	async signup(signupDto: SignupDto) {
@@ -43,12 +48,22 @@ export class AuthService {
 			email: user.email
 		}
 
-		const accessToken = this.jwtService.sign(tokenPayload)
+		const [accessToken, refreshToken] = await Promise.all([
+			this.jwtService.signAsync(tokenPayload),
+			this.jwtService.signAsync(tokenPayload, {
+				secret: this.jwtRefreshConfiguration.secret,
+				expiresIn: this.jwtRefreshConfiguration.expiresIn
+			})
+		])
 
-		this.setAccessTokenCookie(accessToken, res)
+		await Promise.all([
+			this.setAccessTokenCookie(accessToken, res),
+			this.setRefreshTokenCookie(refreshToken, res)
+		])
 
 		return {
-			accessToken: accessToken
+			accessToken,
+			refreshToken
 		}
 	}
 
@@ -77,7 +92,10 @@ export class AuthService {
 		})
 	}
 
-	private setAccessTokenCookie(accessToken: string, res: Response): void {
+	private async setAccessTokenCookie(
+		accessToken: string,
+		res: Response
+	): Promise<void> {
 		const JWT_ACCESS_TOKEN_EXPIRATION_MS =
 			this.cookieConfiguration.accessToken.expires
 
@@ -85,6 +103,23 @@ export class AuthService {
 
 		res.cookie(this.cookieConfiguration.accessToken.name, accessToken, {
 			...this.cookieConfiguration.accessToken,
+			expires
+		})
+	}
+
+	private async setRefreshTokenCookie(
+		refreshToken: string,
+		res: Response
+	): Promise<void> {
+		const JWT_REFRESH_TOKEN_EXPIRATION_MS =
+			this.jwtRefreshConfiguration.expiresIn
+
+		const expires = new Date(
+			Date.now() + JWT_REFRESH_TOKEN_EXPIRATION_MS * 1000
+		)
+
+		res.cookie(this.cookieConfiguration.refreshToken.name, refreshToken, {
+			...this.cookieConfiguration.refreshToken,
 			expires
 		})
 	}

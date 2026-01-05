@@ -14,7 +14,8 @@ describe('AuthController', () => {
 		signup: jest.fn(),
 		sendAccessKey: jest.fn(),
 		verifyAccessKey: jest.fn(),
-		signin: jest.fn()
+		signin: jest.fn(),
+		refreshAccessToken: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -89,19 +90,47 @@ describe('AuthController', () => {
 			} as unknown as Response
 
 			const accessToken = 'token'
+			const refreshToken = 'refresh-token'
 
 			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(user)
 			jest.spyOn(authService, 'signin').mockResolvedValue({
-				accessToken: accessToken
+				accessToken,
+				refreshToken
 			})
 
 			const result = await controller.verifyAccessKey(user, res)
 
 			expect(authService.signin).toHaveBeenCalledWith(user, res)
 
-			expect(result).toEqual({
-				accessToken: accessToken
+			expect(result.accessToken).toEqual(accessToken)
+		})
+	})
+
+	describe('refreshToken', () => {
+		it('should refresh the access token', async () => {
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
+			const accessToken = 'new-access-token'
+			const refreshToken = 'new-refresh-token'
+
+			jest.spyOn(authService, 'signin').mockResolvedValue({
+				accessToken,
+				refreshToken
 			})
+
+			const result = await controller.refreshToken(user, res)
+
+			expect(authService.signin).toHaveBeenCalledWith(user, res)
+
+			expect(result.refreshToken).toBeDefined()
+			expect(result.refreshToken).toEqual(refreshToken)
 		})
 	})
 })

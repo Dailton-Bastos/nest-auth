@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import cookieConfig from 'src/common/config/cookie.config'
 import jwtConfig from 'src/common/config/jwt.config'
+import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
 import { AccessKeyModule } from '../access-key/access-key.module'
 import { UsersModule } from '../users/users.module'
 import { AuthController } from './auth.controller'
@@ -17,7 +18,8 @@ import { JwtStrategy } from './strategies/jwt.strategy'
 		AccessKeyModule,
 		PassportModule,
 		JwtModule.registerAsync(jwtConfig.asProvider()),
-		ConfigModule.forFeature(cookieConfig)
+		ConfigModule.forFeature(cookieConfig),
+		ConfigModule.forFeature(jwtRefreshConfig)
 	],
 	exports: [ConfigModule],
 	providers: [AuthService, AccessCodeStrategy, JwtStrategy],

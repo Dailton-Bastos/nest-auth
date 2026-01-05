@@ -7,5 +7,11 @@ export default registerAs('cookie', () => ({
 		expires: Number(process.env.JWT_ACCESS_TOKEN_EXPIRATION_MS),
 		secure: process.env.NODE_ENV === 'production',
 		httpOnly: true
+	},
+	refreshToken: {
+		name: 'Refresh',
+		expires: Number(process.env.JWT_REFRESH_TOKEN_EXPIRATION_MS),
+		secure: process.env.NODE_ENV === 'production',
+		httpOnly: true
 	}
 }))

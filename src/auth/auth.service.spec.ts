@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, type TestingModule } from '@nestjs/testing'
 import type { Response } from 'express'
 import cookieConfig from 'src/common/config/cookie.config'
+import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import type { TokenPayload } from '../common/interfaces/token-payload.interface'
@@ -44,7 +45,7 @@ describe('AuthService', () => {
 				{
 					provide: JwtService,
 					useValue: {
-						sign: jest.fn()
+						signAsync: jest.fn()
 					}
 				},
 				{
@@ -61,7 +62,20 @@ describe('AuthService', () => {
 							expires: 3600,
 							secure: false,
 							httpOnly: true
+						},
+						refreshToken: {
+							name: 'Refresh',
+							expires: 86400,
+							secure: false,
+							httpOnly: true
 						}
+					}
+				},
+				{
+					provide: jwtRefreshConfig.KEY,
+					useValue: {
+						secret: 'refresh-token-secret',
+						expiresIn: 86400
 					}
 				}
 			]
@@ -233,19 +247,27 @@ describe('AuthService', () => {
 			}
 
 			const accessToken = 'token'
+			const refreshToken = 'refresh-token'
+
+			jest
+				.spyOn(jwtService, 'signAsync')
+				.mockResolvedValueOnce(accessToken)
+				.mockResolvedValueOnce(refreshToken)
 
 			const res = {
 				cookie: jest.fn()
 			} as unknown as Response
 
-			jest.spyOn(jwtService, 'sign').mockReturnValue(accessToken)
-
 			const result = await service.signin(user, res)
 
-			expect(jwtService.sign).toHaveBeenCalledWith(tokenPayload)
+			expect(jwtService.signAsync).toHaveBeenCalledWith(tokenPayload)
+
+			expect(result.accessToken).toBeDefined()
+			expect(result.refreshToken).toBeDefined()
 
 			expect(result).toEqual({
-				accessToken: accessToken
+				accessToken,
+				refreshToken
 			})
 		})
 
@@ -261,7 +283,7 @@ describe('AuthService', () => {
 				cookie: jest.fn()
 			} as unknown as Response
 
-			jest.spyOn(jwtService, 'sign').mockReturnValue(accessToken)
+			jest.spyOn(jwtService, 'signAsync').mockResolvedValue(accessToken)
 
 			await service.signin(user, res)
 
