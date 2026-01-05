@@ -6,6 +6,7 @@ import { AccessKeyModule } from '../access-key/access-key.module'
 import { UsersModule } from '../users/users.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { SessionSerializer } from './session.serializer'
 import { AccessCodeStrategy } from './strategies/access-code.strategy'
 import { JwtStrategy } from './strategies/jwt.strategy'
 
@@ -13,10 +14,10 @@ import { JwtStrategy } from './strategies/jwt.strategy'
 	imports: [
 		UsersModule,
 		AccessKeyModule,
-		PassportModule,
+		PassportModule.register({ session: true }),
 		JwtModule.registerAsync(jwtConfig.asProvider())
 	],
-	providers: [AuthService, AccessCodeStrategy, JwtStrategy],
+	providers: [AuthService, AccessCodeStrategy, JwtStrategy, SessionSerializer],
 	controllers: [AuthController]
 })
 export class AuthModule {}
