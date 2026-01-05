@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
+import type { Response } from 'express'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
 import { AuthController } from './auth.controller'
@@ -83,6 +84,10 @@ describe('AuthController', () => {
 				email: verifyAccessKeyDto.email
 			} as User
 
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
 			const accessToken = 'token'
 
 			jest.spyOn(authService, 'verifyAccessKey').mockResolvedValue(user)
@@ -90,9 +95,9 @@ describe('AuthController', () => {
 				accessToken: accessToken
 			})
 
-			const result = await controller.verifyAccessKey(user)
+			const result = await controller.verifyAccessKey(user, res)
 
-			expect(authService.signin).toHaveBeenCalledWith(user)
+			expect(authService.signin).toHaveBeenCalledWith(user, res)
 
 			expect(result).toEqual({
 				accessToken: accessToken

@@ -5,8 +5,12 @@ import {
 	HttpCode,
 	HttpStatus,
 	Post,
+	Res,
 	UseGuards
 } from '@nestjs/common'
+import type { Response } from 'express'
+import { CurrentUser } from 'src/common/decorators/current-user.decorator'
+import { User } from 'src/users/entities/user.entity'
 import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
@@ -29,5 +33,10 @@ export class AuthController {
 	@UseGuards(AccessCodeAuthGuard)
 	@HttpCode(HttpStatus.OK)
 	@Post('accesskey/verify')
-	async verifyAccessKey() {}
+	async verifyAccessKey(
+		@CurrentUser() user: User,
+		@Res({ passthrough: true }) res: Response
+	) {
+		return this.authService.signin(user, res)
+	}
 }

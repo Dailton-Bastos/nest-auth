@@ -1,8 +1,11 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
 import { BadRequestException, ConflictException } from '@nestjs/common'
+import { ConfigService, ConfigType } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, type TestingModule } from '@nestjs/testing'
+import type { Response } from 'express'
+import cookieConfig from 'src/common/config/cookie.config'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import type { TokenPayload } from '../common/interfaces/token-payload.interface'
@@ -18,6 +21,7 @@ describe('AuthService', () => {
 	let usersService: UsersService
 	let accessKeyService: AccessKeyService
 	let jwtService: JwtService
+	let cookieConfiguration: ConfigType<typeof cookieConfig>
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +46,23 @@ describe('AuthService', () => {
 					useValue: {
 						sign: jest.fn()
 					}
+				},
+				{
+					provide: ConfigService,
+					useValue: {
+						getOrThrow: jest.fn()
+					}
+				},
+				{
+					provide: cookieConfig.KEY,
+					useValue: {
+						accessToken: {
+							name: 'Authentication',
+							expires: 3600,
+							secure: false,
+							httpOnly: true
+						}
+					}
 				}
 			]
 		}).compile()
@@ -50,6 +71,9 @@ describe('AuthService', () => {
 		usersService = module.get<UsersService>(UsersService)
 		accessKeyService = module.get<AccessKeyService>(AccessKeyService)
 		jwtService = module.get<JwtService>(JwtService)
+		cookieConfiguration = module.get<ConfigType<typeof cookieConfig>>(
+			cookieConfig.KEY
+		)
 	})
 
 	it('AuthService should be defined', () => {
@@ -210,15 +234,49 @@ describe('AuthService', () => {
 
 			const accessToken = 'token'
 
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
 			jest.spyOn(jwtService, 'sign').mockReturnValue(accessToken)
 
-			const result = await service.signin(user)
+			const result = await service.signin(user, res)
 
 			expect(jwtService.sign).toHaveBeenCalledWith(tokenPayload)
 
 			expect(result).toEqual({
 				accessToken: accessToken
 			})
+		})
+
+		it('should save the access token in a cookie', async () => {
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			const accessToken = 'token'
+
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
+			jest.spyOn(jwtService, 'sign').mockReturnValue(accessToken)
+
+			await service.signin(user, res)
+
+			expect(res.cookie).toHaveBeenCalledWith(
+				cookieConfiguration.accessToken.name,
+				accessToken,
+				{
+					name: cookieConfiguration.accessToken.name,
+					httpOnly: cookieConfiguration.accessToken.httpOnly,
+					secure: cookieConfiguration.accessToken.secure,
+					expires: new Date(
+						Date.now() + cookieConfiguration.accessToken.expires * 1000
+					)
+				}
+			)
 		})
 	})
 })
