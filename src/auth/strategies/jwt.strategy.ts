@@ -39,6 +39,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		const cookie =
 			req.cookies?.[this.cookieConfiguration.accessToken.name] ?? ''
 
-		return cookie ?? authorizationHeader
+		return cookie || authorizationHeader
 	}
 }
