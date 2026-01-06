@@ -15,6 +15,7 @@ import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { AccessCodeAuthGuard } from './guards/access-code-auth.guard'
+import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -40,6 +41,7 @@ export class AuthController {
 		return this.authService.signin(user, res)
 	}
 
+	@UseGuards(JwtRefreshAuthGuard)
 	@Post('refresh')
 	async refreshToken(
 		@CurrentUser() user: User,

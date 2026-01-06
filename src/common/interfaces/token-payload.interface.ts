@@ -1,4 +1,8 @@
 export interface TokenPayload {
-	userId: number
 	email: string
+	iat: number
+	exp: number
+	aud: string
+	iss: string
+	sub: number
 }

@@ -3,7 +3,8 @@ import {
 	BadRequestException,
 	ConflictException,
 	Inject,
-	Injectable
+	Injectable,
+	UnauthorizedException
 } from '@nestjs/common'
 import type { ConfigType } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
@@ -17,6 +18,7 @@ import { UsersService } from 'src/users/users.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
+import { VerifyRefreshTokenDto } from './dtos/verify-refresh-token.dto'
 
 @Injectable()
 export class AuthService {
@@ -43,10 +45,10 @@ export class AuthService {
 	}
 
 	async signin(user: User, res: Response) {
-		const tokenPayload: TokenPayload = {
-			userId: user.id,
+		const tokenPayload = {
+			sub: user.id,
 			email: user.email
-		}
+		} as TokenPayload
 
 		const [accessToken, refreshToken] = await Promise.all([
 			this.jwtService.signAsync(tokenPayload),
@@ -90,6 +92,27 @@ export class AuthService {
 		return this.usersService.create({
 			email: verifyAccessKeyDto.email
 		})
+	}
+
+	async verifyRefreshToken(verifyRefreshTokenDto: VerifyRefreshTokenDto) {
+		const { refreshToken } = verifyRefreshTokenDto
+
+		if (!refreshToken) {
+			throw new UnauthorizedException('refresh token not found')
+		}
+
+		try {
+			const { sub } = await this.jwtService.verifyAsync<TokenPayload>(
+				refreshToken,
+				{
+					...this.jwtRefreshConfiguration
+				}
+			)
+
+			return this.usersService.findById(sub)
+		} catch {
+			throw new UnauthorizedException('invalid refresh token')
+		}
 	}
 
 	private async setAccessTokenCookie(

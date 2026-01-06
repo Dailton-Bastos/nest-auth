@@ -158,4 +158,48 @@ describe('Auth (e2e)', () => {
 			expect(response.body).not.toBeNull()
 		})
 	})
+
+	describe('POST /api/auth/refresh', () => {
+		it('should refresh the access token', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/accesskey/send')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const tokens = await request(app.getHttpServer())
+				.post('/api/auth/accesskey/verify')
+				.send({ email, code })
+				.expect(HttpStatus.OK)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/refresh')
+				.set('Cookie', `Refresh=${tokens.body.refreshToken}`)
+				.expect(HttpStatus.CREATED)
+
+			expect(response.body).toBeDefined()
+			expect(response.body.accessToken).toBeDefined()
+			expect(response.body.refreshToken).toBeDefined()
+		})
+
+		it('should return a 401 error if the refresh token is invalid', async () => {
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/refresh')
+				.set('Cookie', `Refresh=invalid-refresh-token`)
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('Unauthorized')
+		})
+
+		it('should return a 401 error if the refresh token is not found', async () => {
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/refresh')
+				.set('Cookie', `Refresh=`)
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('Unauthorized')
+		})
+	})
 })

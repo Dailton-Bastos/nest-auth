@@ -11,6 +11,7 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { AccessCodeStrategy } from './strategies/access-code.strategy'
 import { JwtStrategy } from './strategies/jwt.strategy'
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy'
 
 @Module({
 	imports: [
@@ -22,7 +23,7 @@ import { JwtStrategy } from './strategies/jwt.strategy'
 		ConfigModule.forFeature(jwtRefreshConfig)
 	],
 	exports: [ConfigModule],
-	providers: [AuthService, AccessCodeStrategy, JwtStrategy],
+	providers: [AuthService, AccessCodeStrategy, JwtStrategy, JwtRefreshStrategy],
 	controllers: [AuthController]
 })
 export class AuthModule {}

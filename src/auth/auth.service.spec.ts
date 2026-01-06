@@ -1,6 +1,10 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
-import { BadRequestException, ConflictException } from '@nestjs/common'
+import {
+	BadRequestException,
+	ConflictException,
+	UnauthorizedException
+} from '@nestjs/common'
 import { ConfigService, ConfigType } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, type TestingModule } from '@nestjs/testing'
@@ -16,6 +20,7 @@ import { AuthService } from './auth.service'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
+import { VerifyRefreshTokenDto } from './dtos/verify-refresh-token.dto'
 
 describe('AuthService', () => {
 	let service: AuthService
@@ -23,6 +28,7 @@ describe('AuthService', () => {
 	let accessKeyService: AccessKeyService
 	let jwtService: JwtService
 	let cookieConfiguration: ConfigType<typeof cookieConfig>
+	let jwtRefreshConfiguration: ConfigType<typeof jwtRefreshConfig>
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -32,7 +38,8 @@ describe('AuthService', () => {
 					provide: UsersService,
 					useValue: {
 						create: jest.fn(),
-						findByEmail: jest.fn()
+						findByEmail: jest.fn(),
+						findById: jest.fn()
 					}
 				},
 				{
@@ -45,7 +52,8 @@ describe('AuthService', () => {
 				{
 					provide: JwtService,
 					useValue: {
-						signAsync: jest.fn()
+						signAsync: jest.fn(),
+						verifyAsync: jest.fn()
 					}
 				},
 				{
@@ -87,6 +95,9 @@ describe('AuthService', () => {
 		jwtService = module.get<JwtService>(JwtService)
 		cookieConfiguration = module.get<ConfigType<typeof cookieConfig>>(
 			cookieConfig.KEY
+		)
+		jwtRefreshConfiguration = module.get<ConfigType<typeof jwtRefreshConfig>>(
+			jwtRefreshConfig.KEY
 		)
 	})
 
@@ -241,10 +252,10 @@ describe('AuthService', () => {
 				email: 'test@example.com'
 			} as User
 
-			const tokenPayload: TokenPayload = {
-				userId: user.id,
+			const tokenPayload = {
+				sub: user.id,
 				email: user.email
-			}
+			} as TokenPayload
 
 			const accessToken = 'token'
 			const refreshToken = 'refresh-token'
@@ -299,6 +310,78 @@ describe('AuthService', () => {
 					)
 				}
 			)
+		})
+	})
+
+	describe('verifyRefreshToken', () => {
+		it('should verify a refresh token', async () => {
+			const verifyRefreshTokenDto: VerifyRefreshTokenDto = {
+				refreshToken: 'refresh-token'
+			}
+
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({
+				sub: 1,
+				email: 'test@example.com',
+				iat: 1714857600,
+				exp: 1714861200,
+				aud: 'refresh-token',
+				iss: 'https://example.com'
+			})
+
+			jest.spyOn(usersService, 'findById').mockResolvedValue(user)
+
+			const result = await service.verifyRefreshToken(verifyRefreshTokenDto)
+
+			expect(jwtService.verifyAsync).toHaveBeenCalledWith(
+				verifyRefreshTokenDto.refreshToken,
+				{
+					...jwtRefreshConfiguration
+				}
+			)
+
+			expect(usersService.findById).toHaveBeenCalledWith(1)
+
+			expect(result).toBeDefined()
+			expect(result).toEqual(user)
+		})
+
+		it('should throw an error if the refresh token is invalid', async () => {
+			const verifyRefreshTokenDto: VerifyRefreshTokenDto = {
+				refreshToken: 'invalid-refresh-token'
+			}
+
+			await expect(
+				service.verifyRefreshToken(verifyRefreshTokenDto)
+			).rejects.toThrow(UnauthorizedException)
+		})
+
+		it('should throw an error if the refresh token is not found', async () => {
+			const verifyRefreshTokenDto: VerifyRefreshTokenDto = {
+				refreshToken: ''
+			}
+
+			await expect(
+				service.verifyRefreshToken(verifyRefreshTokenDto)
+			).rejects.toThrow(UnauthorizedException)
+		})
+
+		it('should throw an error if user not found', async () => {
+			const verifyRefreshTokenDto: VerifyRefreshTokenDto = {
+				refreshToken: 'refresh-token'
+			}
+
+			jest
+				.spyOn(usersService, 'findById')
+				.mockResolvedValue(null as unknown as User)
+
+			await expect(
+				service.verifyRefreshToken(verifyRefreshTokenDto)
+			).rejects.toThrow(UnauthorizedException)
 		})
 	})
 })
