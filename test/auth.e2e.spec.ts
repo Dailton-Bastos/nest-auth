@@ -15,6 +15,7 @@ describe('Auth (e2e)', () => {
 			expect(response.body).toEqual({
 				id: expect.any(Number),
 				email,
+				password: null,
 				createdAt: expect.any(String),
 				updatedAt: expect.any(String)
 			})
@@ -32,12 +33,10 @@ describe('Auth (e2e)', () => {
 		it('should return a 400 error if a property is not whitelisted', async () => {
 			const response = await request(app.getHttpServer())
 				.post('/api/auth/signup')
-				.send({ email: 'test@example.com', password: 'password' })
+				.send({ email: 'test@example.com', role: 'ADMIN' })
 
 			expect(response.status).toBe(HttpStatus.BAD_REQUEST)
-			expect(response.body.message).toContain(
-				'property password should not exist'
-			)
+			expect(response.body.message).toContain('property role should not exist')
 		})
 
 		it('should return a 409 error if the user already exists', async () => {
@@ -57,6 +56,24 @@ describe('Auth (e2e)', () => {
 				error: 'Conflict',
 				statusCode: HttpStatus.CONFLICT,
 				message: 'user already exists'
+			})
+		})
+
+		it('should sign up a new user with email and password', async () => {
+			const email = 'test@example.com'
+			const password = 'Password123!'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email, password })
+				.expect(HttpStatus.CREATED)
+
+			expect(response.body).toEqual({
+				id: expect.any(Number),
+				email,
+				password: expect.any(String),
+				createdAt: expect.any(String),
+				updatedAt: expect.any(String)
 			})
 		})
 	})
