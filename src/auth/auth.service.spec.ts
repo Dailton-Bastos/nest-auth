@@ -11,6 +11,7 @@ import { Test, type TestingModule } from '@nestjs/testing'
 import type { Response } from 'express'
 import cookieConfig from 'src/common/config/cookie.config'
 import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
+import { HashingService } from 'src/common/hashing/hashing.service'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import type { TokenPayload } from '../common/interfaces/token-payload.interface'
@@ -29,6 +30,7 @@ describe('AuthService', () => {
 	let jwtService: JwtService
 	let cookieConfiguration: ConfigType<typeof cookieConfig>
 	let jwtRefreshConfiguration: ConfigType<typeof jwtRefreshConfig>
+	let hashingService: HashingService
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -85,6 +87,12 @@ describe('AuthService', () => {
 						secret: 'refresh-token-secret',
 						expiresIn: 86400
 					}
+				},
+				{
+					provide: HashingService,
+					useValue: {
+						hash: jest.fn()
+					}
 				}
 			]
 		}).compile()
@@ -99,6 +107,7 @@ describe('AuthService', () => {
 		jwtRefreshConfiguration = module.get<ConfigType<typeof jwtRefreshConfig>>(
 			jwtRefreshConfig.KEY
 		)
+		hashingService = module.get<HashingService>(HashingService)
 	})
 
 	it('AuthService should be defined', () => {
@@ -113,28 +122,75 @@ describe('AuthService', () => {
 		expect(accessKeyService).toBeDefined()
 	})
 
-	it('should sign up a new user with email', async () => {
-		const signupDto: SignupDto = {
-			email: 'test@example.com'
-		}
+	describe('signup', () => {
+		it('should sign up a new user with email', async () => {
+			const signupDto: SignupDto = {
+				email: 'test@example.com'
+			}
 
-		jest.spyOn(usersService, 'create').mockResolvedValue(signupDto as User)
+			jest.spyOn(usersService, 'create').mockResolvedValue(signupDto as User)
 
-		const result = await service.signup(signupDto)
+			const result = await service.signup(signupDto)
 
-		expect(usersService.create).toHaveBeenCalledWith(signupDto)
+			expect(usersService.create).toHaveBeenCalledWith(signupDto)
 
-		expect(result).toEqual(signupDto)
-	})
+			expect(result).toEqual(signupDto)
+		})
 
-	it('should throw an error if the user already exists', async () => {
-		const signupDto: SignupDto = {
-			email: 'test@example.com'
-		}
+		it('should throw an error if the user already exists', async () => {
+			const signupDto: SignupDto = {
+				email: 'test@example.com'
+			}
 
-		jest.spyOn(usersService, 'findByEmail').mockResolvedValue(signupDto as User)
+			jest
+				.spyOn(usersService, 'findByEmail')
+				.mockResolvedValue(signupDto as User)
 
-		await expect(service.signup(signupDto)).rejects.toThrow(ConflictException)
+			await expect(service.signup(signupDto)).rejects.toThrow(ConflictException)
+		})
+
+		it('should create a new user with email and password if provided', async () => {
+			const signupDto: SignupDto = {
+				email: 'test@example.com',
+				password: 'Password123!'
+			}
+
+			jest.spyOn(usersService, 'create').mockResolvedValue(signupDto as User)
+
+			const result = await service.signup(signupDto)
+
+			expect(usersService.create).toHaveBeenCalledWith(signupDto)
+
+			expect(result).toEqual(signupDto)
+		})
+
+		it('should hash the password if provided', async () => {
+			const signupDto: SignupDto = {
+				email: 'test@example.com',
+				password: 'Password123!'
+			}
+
+			const hashedPassword = 'hashed-password'
+
+			jest.spyOn(hashingService, 'hash').mockResolvedValue(hashedPassword)
+
+			jest.spyOn(usersService, 'create').mockResolvedValue(signupDto as User)
+
+			const result = await service.signup(signupDto)
+
+			// expect(hashingService.hash).toHaveBeenCalledWith(signupDto.password)
+
+			expect(usersService.create).toHaveBeenCalledWith(signupDto)
+
+			expect(result.password).toBeDefined()
+			// expect(result.password).not.toEqual(signupDto.password)
+			expect(result.password).toEqual(hashedPassword)
+
+			// expect(result).toEqual({
+			// 	email: signupDto.email,
+			// 	password: hashedPassword
+			// })
+		})
 	})
 
 	describe('sendAccessKey', () => {

@@ -12,6 +12,7 @@ import type { Response } from 'express'
 import { AccessKeyService } from 'src/access-key/access-key.service'
 import cookieConfig from 'src/common/config/cookie.config'
 import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
+import { HashingService } from 'src/common/hashing/hashing.service'
 import type { TokenPayload } from 'src/common/interfaces/token-payload.interface'
 import { User } from 'src/users/entities/user.entity'
 import { UsersService } from 'src/users/users.service'
@@ -31,7 +32,8 @@ export class AuthService {
 		@Inject(jwtRefreshConfig.KEY)
 		private readonly jwtRefreshConfiguration: ConfigType<
 			typeof jwtRefreshConfig
-		>
+		>,
+		private readonly hashingService: HashingService
 	) {}
 
 	async signup(signupDto: SignupDto) {
@@ -41,7 +43,18 @@ export class AuthService {
 			throw new ConflictException('user already exists')
 		}
 
-		return this.usersService.create(signupDto)
+		if (signupDto?.password) {
+			const hashedPassword = await this.hashingService.hash(signupDto.password)
+
+			signupDto.password = hashedPassword
+		}
+
+		const user = {
+			email: signupDto.email,
+			password: signupDto.password
+		}
+
+		return this.usersService.create(user)
 	}
 
 	async signin(user: User, res: Response) {
