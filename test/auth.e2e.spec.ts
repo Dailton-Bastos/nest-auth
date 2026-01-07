@@ -283,4 +283,43 @@ describe('Auth (e2e)', () => {
 			expect(response.body.message).toContain('invalid credentials')
 		})
 	})
+
+	describe('POST /api/auth/password_reset', () => {
+		it('should generate a password reset code', async () => {
+			const email = 'test@example.com'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/password_reset')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			expect(response.body.code).toBeDefined()
+			expect(response.body.code.length).toBeGreaterThan(6)
+		})
+
+		it('should throw an error if user not found', async () => {
+			const email = 'test@example.com'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/password_reset')
+				.send({ email })
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('user not found')
+		})
+
+		it('should throw an error if email is not provided', async () => {
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/password_reset')
+				.send({ email: '' })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('email must be an email')
+		})
+	})
 })
