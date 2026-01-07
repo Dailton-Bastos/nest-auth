@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
 
-import { NotFoundException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -59,6 +59,38 @@ describe('UsersService', () => {
 			expect(repository.save).toHaveBeenCalledWith(newUser)
 
 			expect(result).toEqual(newUser)
+		})
+
+		it('should create a new user with email and password if provided', async () => {
+			const createUserDto: CreateUserDto = {
+				email: 'test@example.com',
+				password: 'Password123!'
+			}
+
+			const newUser = {
+				email: createUserDto.email,
+				password: createUserDto.password
+			}
+
+			jest.spyOn(repository, 'create').mockReturnValue(newUser as User)
+
+			const result = await service.create(createUserDto)
+
+			expect(repository.create).toHaveBeenCalledWith(createUserDto)
+
+			expect(repository.save).toHaveBeenCalledWith(newUser)
+
+			expect(result).toEqual(newUser)
+		})
+
+		it('should throw an error if the email is not provided', async () => {
+			const createUserDto: CreateUserDto = {
+				email: ''
+			}
+
+			await expect(service.create(createUserDto)).rejects.toThrow(
+				BadRequestException
+			)
 		})
 	})
 

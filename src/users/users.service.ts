@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CreateUserDto } from './dtos/create-user.dto'
@@ -13,6 +17,10 @@ export class UsersService {
 	) {}
 
 	async create(createUserDto: CreateUserDto) {
+		if (!createUserDto.email) {
+			throw new BadRequestException('email is required')
+		}
+
 		const user = this.userRepository.create(createUserDto)
 
 		await this.userRepository.save(user)
