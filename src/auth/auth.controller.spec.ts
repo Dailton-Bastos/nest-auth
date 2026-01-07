@@ -5,6 +5,7 @@ import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { PasswordResetDto } from './dtos/password-reset-dto'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
@@ -16,7 +17,8 @@ describe('AuthController', () => {
 		sendAccessKey: jest.fn(),
 		verifyAccessKey: jest.fn(),
 		signin: jest.fn(),
-		refreshAccessToken: jest.fn()
+		refreshAccessToken: jest.fn(),
+		generatePasswordResetCode: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -184,6 +186,31 @@ describe('AuthController', () => {
 
 			expect(result.accessToken).toEqual(accessToken)
 			expect(result.refreshToken).toEqual(refreshToken)
+		})
+	})
+
+	describe('passwordReset', () => {
+		const passwordResetDto: PasswordResetDto = {
+			email: 'test@example.com'
+		}
+
+		const accessKey = {
+			id: 1,
+			code: 'hashed-code',
+			expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes,
+			email: passwordResetDto.email
+		} as AccessKey
+
+		it('should generate a password reset code', async () => {
+			jest
+				.spyOn(authService, 'generatePasswordResetCode')
+				.mockResolvedValue(accessKey as AccessKey)
+
+			await controller.passwordReset(passwordResetDto)
+
+			expect(authService.generatePasswordResetCode).toHaveBeenCalledWith(
+				passwordResetDto.email
+			)
 		})
 	})
 })

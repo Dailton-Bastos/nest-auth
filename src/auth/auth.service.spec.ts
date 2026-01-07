@@ -552,4 +552,46 @@ describe('AuthService', () => {
 			)
 		})
 	})
+
+	describe('generatePasswordResetCode', () => {
+		it('should generate a password reset code', async () => {
+			const email = 'test@example.com'
+
+			const accessKey = {
+				id: 1,
+				code: 'hashed-code',
+				expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes,
+				email: email
+			}
+
+			const user = {
+				id: 1,
+				email: email
+			} as User
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+
+			jest
+				.spyOn(accessKeyService, 'create')
+				.mockResolvedValue(accessKey as AccessKey)
+
+			const result = await service.generatePasswordResetCode(email)
+
+			expect(accessKeyService.create).toHaveBeenCalledWith({ email })
+
+			expect(result.code).toBeDefined()
+
+			expect(result.code).toEqual(accessKey.code)
+		})
+
+		it('should throw an error if user does not exist', async () => {
+			const email = 'test@example.com'
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null)
+
+			await expect(service.generatePasswordResetCode(email)).rejects.toThrow(
+				UnauthorizedException
+			)
+		})
+	})
 })

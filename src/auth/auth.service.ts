@@ -164,6 +164,16 @@ export class AuthService {
 		return existingUser
 	}
 
+	async generatePasswordResetCode(email: string) {
+		const existingUser = await this.usersService.findByEmail(email)
+
+		if (!existingUser) {
+			throw new UnauthorizedException('user not found')
+		}
+
+		return this.accessKeyService.create({ email })
+	}
+
 	private async setAccessTokenCookie(
 		accessToken: string,
 		res: Response

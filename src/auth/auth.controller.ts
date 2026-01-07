@@ -12,6 +12,7 @@ import type { Response } from 'express'
 import { CurrentUser } from 'src/common/decorators/current-user.decorator'
 import { User } from 'src/users/entities/user.entity'
 import { AuthService } from './auth.service'
+import { PasswordResetDto } from './dtos/password-reset-dto'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { AccessCodeAuthGuard } from './guards/access-code-auth.guard'
@@ -58,5 +59,10 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response
 	) {
 		return this.authService.signin(user, res)
+	}
+
+	@Post('password_reset')
+	async passwordReset(@Body() passwordResetDto: PasswordResetDto) {
+		return this.authService.generatePasswordResetCode(passwordResetDto.email)
 	}
 }
