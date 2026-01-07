@@ -22,6 +22,7 @@ import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 import { VerifyRefreshTokenDto } from './dtos/verify-refresh-token.dto'
+import { VerifyUserWithEmailAndPasswordDto } from './dtos/verify-user-with-email-and-password.dto'
 
 describe('AuthService', () => {
 	let service: AuthService
@@ -91,7 +92,8 @@ describe('AuthService', () => {
 				{
 					provide: HashingService,
 					useValue: {
-						hash: jest.fn()
+						hash: jest.fn(),
+						verify: jest.fn()
 					}
 				}
 			]
@@ -178,18 +180,10 @@ describe('AuthService', () => {
 
 			const result = await service.signup(signupDto)
 
-			// expect(hashingService.hash).toHaveBeenCalledWith(signupDto.password)
-
 			expect(usersService.create).toHaveBeenCalledWith(signupDto)
 
 			expect(result.password).toBeDefined()
-			// expect(result.password).not.toEqual(signupDto.password)
 			expect(result.password).toEqual(hashedPassword)
-
-			// expect(result).toEqual({
-			// 	email: signupDto.email,
-			// 	password: hashedPassword
-			// })
 		})
 	})
 
@@ -367,6 +361,16 @@ describe('AuthService', () => {
 				}
 			)
 		})
+
+		it('should throw an error if the user is not provided', async () => {
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
+			await expect(
+				service.signin(null as unknown as User, res)
+			).rejects.toThrow(BadRequestException)
+		})
 	})
 
 	describe('verifyRefreshToken', () => {
@@ -438,6 +442,114 @@ describe('AuthService', () => {
 			await expect(
 				service.verifyRefreshToken(verifyRefreshTokenDto)
 			).rejects.toThrow(UnauthorizedException)
+		})
+	})
+
+	describe('verifyUserWithEmailAndPassword', () => {
+		it('should verify a user with email and password', async () => {
+			const verifyUserWithEmailAndPasswordDto: VerifyUserWithEmailAndPasswordDto =
+				{
+					email: 'test@example.com',
+					password: 'Password123!'
+				}
+
+			const user = {
+				id: 1,
+				email: 'test@example.com',
+				password: 'hashed-password'
+			} as User
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+			jest.spyOn(hashingService, 'verify').mockResolvedValue(true)
+
+			await service.verifyUserWithEmailAndPassword(
+				verifyUserWithEmailAndPasswordDto
+			)
+
+			expect(usersService.findByEmail).toHaveBeenCalledWith(
+				verifyUserWithEmailAndPasswordDto.email
+			)
+
+			expect(hashingService.verify).toHaveBeenCalledWith(
+				verifyUserWithEmailAndPasswordDto.password,
+				user.password
+			)
+		})
+
+		it('should throw an error if user not found', async () => {
+			const verifyUserWithEmailAndPasswordDto: VerifyUserWithEmailAndPasswordDto =
+				{
+					email: 'test@example.com',
+					password: 'Password123!'
+				}
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null)
+
+			await expect(
+				service.verifyUserWithEmailAndPassword(
+					verifyUserWithEmailAndPasswordDto
+				)
+			).rejects.toThrow(UnauthorizedException)
+		})
+
+		it('should throw an error if user does not have password', async () => {
+			const verifyUserWithEmailAndPasswordDto: VerifyUserWithEmailAndPasswordDto =
+				{
+					email: 'test@example.com',
+					password: 'Password123!'
+				}
+
+			const user = {
+				id: 1,
+				email: 'test@example.com',
+				password: ''
+			} as User
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+
+			await expect(
+				service.verifyUserWithEmailAndPassword(
+					verifyUserWithEmailAndPasswordDto
+				)
+			).rejects.toThrow(UnauthorizedException)
+
+			expect(usersService.findByEmail).toHaveBeenCalledWith(
+				verifyUserWithEmailAndPasswordDto.email
+			)
+
+			expect(hashingService.verify).not.toHaveBeenCalled()
+		})
+
+		it('should throw an error if password is invalid', async () => {
+			const verifyUserWithEmailAndPasswordDto: VerifyUserWithEmailAndPasswordDto =
+				{
+					email: 'test@example.com',
+					password: 'invalid-password'
+				}
+
+			const user = {
+				id: 1,
+				email: 'test@example.com',
+				password: 'hashed-password'
+			} as User
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+			jest.spyOn(hashingService, 'verify').mockRejectedValue(false)
+
+			await expect(
+				service.verifyUserWithEmailAndPassword(
+					verifyUserWithEmailAndPasswordDto
+				)
+			).rejects.toThrow(UnauthorizedException)
+
+			expect(usersService.findByEmail).toHaveBeenCalledWith(
+				verifyUserWithEmailAndPasswordDto.email
+			)
+
+			expect(hashingService.verify).toHaveBeenCalledWith(
+				verifyUserWithEmailAndPasswordDto.password,
+				user.password
+			)
 		})
 	})
 })

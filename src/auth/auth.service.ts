@@ -20,6 +20,7 @@ import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
 import { VerifyRefreshTokenDto } from './dtos/verify-refresh-token.dto'
+import { VerifyUserWithEmailAndPasswordDto } from './dtos/verify-user-with-email-and-password.dto'
 
 @Injectable()
 export class AuthService {
@@ -58,6 +59,10 @@ export class AuthService {
 	}
 
 	async signin(user: User, res: Response) {
+		if (!user) {
+			throw new BadRequestException('user not found')
+		}
+
 		const tokenPayload = {
 			sub: user.id,
 			email: user.email
@@ -126,6 +131,37 @@ export class AuthService {
 		} catch {
 			throw new UnauthorizedException('invalid refresh token')
 		}
+	}
+
+	async verifyUserWithEmailAndPassword(
+		verifyUserWithEmailAndPasswordDto: VerifyUserWithEmailAndPasswordDto
+	) {
+		const { email, password } = verifyUserWithEmailAndPasswordDto
+
+		const existingUser = await this.usersService.findByEmail(email)
+
+		if (!existingUser) {
+			throw new UnauthorizedException('user not found')
+		}
+
+		if (!existingUser?.password) {
+			throw new UnauthorizedException('password is required')
+		}
+
+		try {
+			const isValid = await this.hashingService.verify(
+				password,
+				existingUser.password
+			)
+
+			if (!isValid) {
+				throw new UnauthorizedException('invalid credentials')
+			}
+		} catch {
+			throw new UnauthorizedException('invalid credentials')
+		}
+
+		return existingUser
 	}
 
 	private async setAccessTokenCookie(

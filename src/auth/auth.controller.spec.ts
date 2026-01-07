@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useImportType: <Nest can't resolve dependencies> */
+
 import type { Response } from 'express'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
@@ -153,6 +154,35 @@ describe('AuthController', () => {
 			expect(authService.signin).toHaveBeenCalledWith(user, res)
 
 			expect(result.refreshToken).toBeDefined()
+			expect(result.refreshToken).toEqual(refreshToken)
+		})
+	})
+
+	describe('loginWithEmailAndPassword', () => {
+		it('should login a user with email and password', async () => {
+			const user = {
+				id: 1,
+				email: 'test@example.com',
+				password: 'Password123!'
+			} as User
+
+			const res = {
+				cookie: jest.fn()
+			} as unknown as Response
+
+			const accessToken = 'access-token'
+			const refreshToken = 'refresh-token'
+
+			jest.spyOn(authService, 'signin').mockResolvedValue({
+				accessToken,
+				refreshToken
+			})
+
+			const result = await controller.loginWithEmailAndPassword(user, res)
+
+			expect(authService.signin).toHaveBeenCalledWith(user, res)
+
+			expect(result.accessToken).toEqual(accessToken)
 			expect(result.refreshToken).toEqual(refreshToken)
 		})
 	})

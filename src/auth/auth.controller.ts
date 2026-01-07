@@ -16,6 +16,7 @@ import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { AccessCodeAuthGuard } from './guards/access-code-auth.guard'
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard'
+import { LocalAuthGuard } from './guards/local-auth.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -44,6 +45,15 @@ export class AuthController {
 	@UseGuards(JwtRefreshAuthGuard)
 	@Post('refresh')
 	async refreshToken(
+		@CurrentUser() user: User,
+		@Res({ passthrough: true }) res: Response
+	) {
+		return this.authService.signin(user, res)
+	}
+
+	@UseGuards(LocalAuthGuard)
+	@Post('login')
+	async loginWithEmailAndPassword(
 		@CurrentUser() user: User,
 		@Res({ passthrough: true }) res: Response
 	) {
