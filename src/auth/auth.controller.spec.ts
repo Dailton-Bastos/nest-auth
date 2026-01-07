@@ -48,6 +48,29 @@ describe('AuthController', () => {
 
 			expect(result).toEqual(user)
 		})
+
+		it('should sign up a new user with email and password', async () => {
+			const signupDto: SignupDto = {
+				email: 'test@example.com',
+				password: 'Password123!'
+			}
+
+			const user = {
+				email: signupDto.email,
+				password: signupDto.password
+			} as User
+
+			jest.spyOn(authService, 'signup').mockResolvedValue(user)
+
+			const result = await controller.signup(signupDto)
+
+			expect(authService.signup).toHaveBeenCalledWith(signupDto)
+
+			expect(result).toEqual({
+				email: signupDto.email,
+				password: expect.any(String)
+			})
+		})
 	})
 
 	describe('sendAccessKey', () => {
