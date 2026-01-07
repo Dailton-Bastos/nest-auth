@@ -219,4 +219,68 @@ describe('Auth (e2e)', () => {
 			expect(response.body.message).toContain('Unauthorized')
 		})
 	})
+
+	describe('POST /api/auth/login', () => {
+		it('should login a user with email and password', async () => {
+			const email = 'test@example.com'
+			const password = 'Password123!'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email, password })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/login')
+				.send({ email, password })
+
+			expect(response.body).toBeDefined()
+			expect(response.body.accessToken).toBeDefined()
+			expect(response.body.refreshToken).toBeDefined()
+		})
+
+		it('should throw an error if user not found', async () => {
+			const email = 'test@example.com'
+			const password = 'Password123!'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/login')
+				.send({ email, password })
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('user not found')
+		})
+
+		it('should throw an error if password is not provided', async () => {
+			const email = 'test@example.com'
+			const password = null
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email, password })
+				.expect(HttpStatus.CREATED)
+
+			await request(app.getHttpServer())
+				.post('/api/auth/login')
+				.send({ email, password })
+				.expect(HttpStatus.UNAUTHORIZED)
+		})
+
+		it('should throw an error if password is incorrect', async () => {
+			const email = 'test@example.com'
+			const password = 'Password123!'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email, password })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/login')
+				.send({ email, password: 'incorrect-password' })
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('invalid credentials')
+		})
+	})
 })
