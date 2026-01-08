@@ -67,6 +67,7 @@ export class AuthController {
 		return this.authService.generatePasswordResetCode(passwordResetDto.email)
 	}
 
+	@HttpCode(HttpStatus.OK)
 	@Post('new_password')
 	async newPassword(@Body() newPasswordDto: NewPasswordDto) {
 		return this.authService.changePassword(newPasswordDto)

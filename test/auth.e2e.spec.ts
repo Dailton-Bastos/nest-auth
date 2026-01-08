@@ -154,7 +154,7 @@ describe('Auth (e2e)', () => {
 				.send({ email, code })
 				.expect(HttpStatus.BAD_REQUEST)
 
-			expect(response.body.message).toContain('access key expired')
+			expect(response.body.message).toContain('code expired')
 		})
 
 		it('should return true if the access key is valid and not expired', async () => {
@@ -320,6 +320,86 @@ describe('Auth (e2e)', () => {
 				.expect(HttpStatus.BAD_REQUEST)
 
 			expect(response.body.message).toContain('email must be an email')
+		})
+	})
+
+	describe('POST /api/auth/new_password', () => {
+		it('should change the password', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+			const newPassword = 'Password123!'
+
+			await request(app.getHttpServer())
+				.post('/api/auth/signup')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			await request(app.getHttpServer())
+				.post('/api/auth/password_reset')
+				.send({ email })
+				.expect(HttpStatus.CREATED)
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/new_password')
+				.send({ email, code, newPassword })
+				.expect(HttpStatus.OK)
+
+			expect(response.body.message).toContain('password changed successfully')
+		})
+
+		it('should throw an error if the code is not provided', async () => {
+			const email = 'test@example.com'
+			const newPassword = 'Password123!'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/new_password')
+				.send({ email, newPassword })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('code should not be empty')
+		})
+
+		it('should throw an error if the new password is not provided', async () => {
+			const newPassword = ''
+			const email = 'test@example.com'
+			const code = '123456'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/new_password')
+				.send({ email, code, newPassword })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body).toEqual({
+				error: 'Bad Request',
+				statusCode: HttpStatus.BAD_REQUEST,
+				message: expect.arrayContaining(['newPassword should not be empty'])
+			})
+		})
+
+		it('should throw an error if the email is not provided', async () => {
+			const email = ''
+			const code = '123456'
+			const newPassword = 'Password123!'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/new_password')
+				.send({ email, code, newPassword })
+				.expect(HttpStatus.BAD_REQUEST)
+
+			expect(response.body.message).toContain('email should not be empty')
+		})
+
+		it('should throw an error if user does not exist', async () => {
+			const email = 'test@example.com'
+			const code = '123456'
+			const newPassword = 'Password123!'
+
+			const response = await request(app.getHttpServer())
+				.post('/api/auth/new_password')
+				.send({ email, code, newPassword })
+				.expect(HttpStatus.UNAUTHORIZED)
+
+			expect(response.body.message).toContain('user not found')
 		})
 	})
 })
