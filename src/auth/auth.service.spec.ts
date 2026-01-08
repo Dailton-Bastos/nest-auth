@@ -8,16 +8,19 @@ import {
 import { ConfigService, ConfigType } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, type TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import type { Response } from 'express'
 import cookieConfig from 'src/common/config/cookie.config'
 import jwtRefreshConfig from 'src/common/config/jwt-refresh.config'
 import { HashingService } from 'src/common/hashing/hashing.service'
+import { Repository } from 'typeorm'
 import { AccessKeyService } from '../access-key/access-key.service'
 import { AccessKey } from '../access-key/entities/access-key.entity'
 import type { TokenPayload } from '../common/interfaces/token-payload.interface'
 import { User } from '../users/entities/user.entity'
 import { UsersService } from '../users/users.service'
 import { AuthService } from './auth.service'
+import { NewPasswordDto } from './dtos/new-password.dto'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
@@ -32,6 +35,7 @@ describe('AuthService', () => {
 	let cookieConfiguration: ConfigType<typeof cookieConfig>
 	let jwtRefreshConfiguration: ConfigType<typeof jwtRefreshConfig>
 	let hashingService: HashingService
+	let userRepository: Repository<User>
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -49,7 +53,8 @@ describe('AuthService', () => {
 					provide: AccessKeyService,
 					useValue: {
 						create: jest.fn(),
-						verify: jest.fn()
+						verify: jest.fn(),
+						findByEmail: jest.fn()
 					}
 				},
 				{
@@ -95,6 +100,12 @@ describe('AuthService', () => {
 						hash: jest.fn(),
 						verify: jest.fn()
 					}
+				},
+				{
+					provide: getRepositoryToken(User),
+					useValue: {
+						save: jest.fn()
+					}
 				}
 			]
 		}).compile()
@@ -110,6 +121,7 @@ describe('AuthService', () => {
 			jwtRefreshConfig.KEY
 		)
 		hashingService = module.get<HashingService>(HashingService)
+		userRepository = module.get<Repository<User>>(getRepositoryToken(User))
 	})
 
 	it('AuthService should be defined', () => {
@@ -592,6 +604,110 @@ describe('AuthService', () => {
 			await expect(service.generatePasswordResetCode(email)).rejects.toThrow(
 				UnauthorizedException
 			)
+		})
+	})
+
+	describe('changePassword', () => {
+		it('should throw an error if the code is not provided', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '',
+				newPassword: 'Password123!',
+				email: 'test@example.com'
+			}
+
+			await expect(service.changePassword(newPasswordDto)).rejects.toThrow(
+				BadRequestException
+			)
+		})
+
+		it('should throw an error if the new password is not provided', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '123456',
+				newPassword: '',
+				email: 'test@example.com'
+			}
+
+			await expect(service.changePassword(newPasswordDto)).rejects.toThrow(
+				BadRequestException
+			)
+		})
+
+		it('should throw an error if the email is not provided', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '123456',
+				newPassword: 'Password123!',
+				email: ''
+			}
+
+			await expect(service.changePassword(newPasswordDto)).rejects.toThrow(
+				BadRequestException
+			)
+		})
+
+		it('should throw an error if the user does not exist', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '123456',
+				newPassword: 'Password123!',
+				email: 'test@example.com'
+			}
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null)
+
+			await expect(service.changePassword(newPasswordDto)).rejects.toThrow(
+				UnauthorizedException
+			)
+		})
+
+		it('should hash the new password', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '123456',
+				newPassword: 'Password123!',
+				email: 'test@example.com'
+			}
+
+			const hashedPassword = 'hashed-password'
+
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			jest.spyOn(hashingService, 'hash').mockResolvedValue(hashedPassword)
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+
+			await service.changePassword(newPasswordDto)
+
+			expect(hashingService.hash).toHaveBeenCalledWith(
+				newPasswordDto.newPassword
+			)
+		})
+
+		it('should change user password', async () => {
+			const newPasswordDto: NewPasswordDto = {
+				code: '123456',
+				newPassword: 'Password123!',
+				email: 'test@example.com'
+			}
+
+			const user = {
+				id: 1,
+				email: 'test@example.com'
+			} as User
+
+			const hashedPassword = 'hashed-password'
+
+			jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user)
+			jest.spyOn(hashingService, 'hash').mockResolvedValue(hashedPassword)
+			jest.spyOn(userRepository, 'save').mockResolvedValue(user)
+
+			const result = await service.changePassword(newPasswordDto)
+
+			expect(userRepository.save).toHaveBeenCalledWith({
+				...user,
+				password: hashedPassword
+			})
+
+			expect(result).toEqual({ message: 'password changed successfully' })
 		})
 	})
 })

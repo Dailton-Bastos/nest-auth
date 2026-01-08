@@ -60,7 +60,7 @@ export class AccessKeyService {
 
 		const isExpired = accessKey.expiresAt < new Date()
 
-		if (isExpired) throw new BadRequestException('access key expired')
+		if (isExpired) throw new BadRequestException('code expired')
 
 		return true
 	}

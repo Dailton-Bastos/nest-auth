@@ -5,6 +5,7 @@ import { AccessKey } from '../access-key/entities/access-key.entity'
 import { User } from '../users/entities/user.entity'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { NewPasswordDto } from './dtos/new-password.dto'
 import { PasswordResetDto } from './dtos/password-reset-dto'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
@@ -18,7 +19,8 @@ describe('AuthController', () => {
 		verifyAccessKey: jest.fn(),
 		signin: jest.fn(),
 		refreshAccessToken: jest.fn(),
-		generatePasswordResetCode: jest.fn()
+		generatePasswordResetCode: jest.fn(),
+		changePassword: jest.fn()
 	} as unknown as AuthService
 
 	beforeEach(async () => {
@@ -211,6 +213,26 @@ describe('AuthController', () => {
 			expect(authService.generatePasswordResetCode).toHaveBeenCalledWith(
 				passwordResetDto.email
 			)
+		})
+	})
+
+	describe('newPassword', () => {
+		const newPasswordDto: NewPasswordDto = {
+			code: '123456',
+			newPassword: 'Password123!',
+			email: 'test@example.com'
+		}
+
+		const result = {
+			message: 'password changed successfully'
+		}
+
+		it('should change the password', async () => {
+			jest.spyOn(authService, 'changePassword').mockResolvedValue(result)
+
+			await controller.newPassword(newPasswordDto)
+
+			expect(authService.changePassword).toHaveBeenCalledWith(newPasswordDto)
 		})
 	})
 })

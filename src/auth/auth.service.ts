@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common'
 import type { ConfigType } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
+import { InjectRepository } from '@nestjs/typeorm'
 import type { Response } from 'express'
 import { AccessKeyService } from 'src/access-key/access-key.service'
 import cookieConfig from 'src/common/config/cookie.config'
@@ -16,6 +17,8 @@ import { HashingService } from 'src/common/hashing/hashing.service'
 import type { TokenPayload } from 'src/common/interfaces/token-payload.interface'
 import { User } from 'src/users/entities/user.entity'
 import { UsersService } from 'src/users/users.service'
+import { Repository } from 'typeorm'
+import { NewPasswordDto } from './dtos/new-password.dto'
 import { SendAccessKeyDto } from './dtos/send-access-key.dto'
 import { SignupDto } from './dtos/signup.dto'
 import { VerifyAccessKeyDto } from './dtos/verify-access-key.dto'
@@ -34,7 +37,9 @@ export class AuthService {
 		private readonly jwtRefreshConfiguration: ConfigType<
 			typeof jwtRefreshConfig
 		>,
-		private readonly hashingService: HashingService
+		private readonly hashingService: HashingService,
+		@InjectRepository(User)
+		private readonly userRepository: Repository<User>
 	) {}
 
 	async signup(signupDto: SignupDto) {
@@ -174,6 +179,25 @@ export class AuthService {
 		return this.accessKeyService.create({ email })
 	}
 
+	async changePassword(newPasswordDto: NewPasswordDto) {
+		const { code, newPassword, email } = newPasswordDto
+
+		const existingUser = await this.validateNewPassword(newPasswordDto)
+
+		await this.accessKeyService.verify(email, code)
+
+		const hashedNewPassword = await this.hashingService.hash(newPassword)
+
+		await this.userRepository.save({
+			...existingUser,
+			password: hashedNewPassword
+		})
+
+		return {
+			message: 'password changed successfully'
+		}
+	}
+
 	private async setAccessTokenCookie(
 		accessToken: string,
 		res: Response
@@ -204,5 +228,29 @@ export class AuthService {
 			...this.cookieConfiguration.refreshToken,
 			expires
 		})
+	}
+
+	private async validateNewPassword(newPasswordDto: NewPasswordDto) {
+		const { code, newPassword, email } = newPasswordDto
+
+		if (!code) {
+			throw new BadRequestException('code is required')
+		}
+
+		if (!newPassword) {
+			throw new BadRequestException('new password is required')
+		}
+
+		if (!email) {
+			throw new BadRequestException('email is required')
+		}
+
+		const existingUser = await this.usersService.findByEmail(email)
+
+		if (!existingUser) {
+			throw new UnauthorizedException('user not found')
+		}
+
+		return existingUser
 	}
 }
